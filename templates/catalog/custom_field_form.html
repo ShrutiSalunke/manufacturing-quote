@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">{{ title }}</h1>
+<form method="post" class="bg-white border rounded p-4" style="max-width:720px">
+  {% csrf_token %}
+  {% for field in form %}
+    <div class="mb-3 {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
+      {% if field.field.widget.input_type == 'checkbox' %}
+        {{ field }} <label class="form-check-label">{{ field.label }}</label>
+      {% else %}
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+      {% endif %}
+      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+  {% endfor %}
+  <button class="btn btn-success" type="submit">Save</button>
+  <a class="btn btn-link" href="{% url 'catalog:custom_field_list' %}">Cancel</a>
+</form>
+{% endblock %}

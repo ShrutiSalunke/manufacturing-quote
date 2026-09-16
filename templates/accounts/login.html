@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block unauthenticated %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg,#0f6b5c 0%,#12353a 100%);">
+  <div class="card shadow-lg" style="width: 100%; max-width: 420px;">
+    <div class="card-body p-4">
+      <h1 class="h4 mb-1">{{ COMPANY_NAME }}</h1>
+      <p class="text-muted mb-4">Manufacturing Quote Costing</p>
+      {% if form.errors %}
+        <div class="alert alert-danger">Invalid username/email or password.</div>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <input type="text" name="username" class="form-control" autofocus required value="{{ form.username.value|default:'' }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" required>
+        </div>
+        <button class="btn btn-success w-100" type="submit">Sign in</button>
+      </form>
+      <p class="small text-muted mt-3 mb-0">Demo: admin@example.com / Admin123!</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

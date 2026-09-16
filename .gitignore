@@ -1,0 +1,17 @@
+*.pyc
+__pycache__/
+.venv/
+venv/
+.env
+db.sqlite3
+media/quotes/
+media/imports/
+staticfiles/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.egg-info/
+dist/
+build/
+PUSH_COMMANDS.txt

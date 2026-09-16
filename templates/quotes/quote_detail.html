@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ quote.number }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'quotes:quote_list' %}">Quotes</a> / {{ quote.number }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ quote.number }} <span class="badge text-bg-secondary">{{ quote.status }}</span></h1>
+    <div class="text-muted">{{ quote.customer }} · {{ quote.plant }} · {{ quote.currency }}</div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if quote.is_editable %}
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'quotes:quote_add_line' quote.pk %}">Add line</a>
+      <form method="post" action="{% url 'quotes:quote_calculate' quote.pk %}">{% csrf_token %}
+        <button class="btn btn-primary btn-sm" type="submit">Calculate</button>
+      </form>
+    {% endif %}
+    {% if quote.status == 'CALCULATED' or quote.status == 'ISSUED' %}
+      <a class="btn btn-success btn-sm" href="{% url 'quotes:quote_pdf' quote.pk %}">Generate / Download PDF</a>
+    {% endif %}
+    {% if quote.status == 'CALCULATED' %}
+      <form method="post" action="{% url 'quotes:quote_issue' quote.pk %}">{% csrf_token %}
+        <button class="btn btn-outline-dark btn-sm" type="submit">Mark Issued</button>
+      </form>
+    {% endif %}
+    {% if quote.status == 'ISSUED' %}
+      <form method="post" action="{% url 'quotes:quote_clone' quote.pk %}">{% csrf_token %}
+        <button class="btn btn-outline-secondary btn-sm" type="submit">New version (clone)</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="bg-white border rounded p-3">
+      <h2 class="h6">Lines</h2>
+      {% for line in quote.lines.all %}
+      <div class="border-bottom py-2">
+        <div class="d-flex justify-content-between">
+          <strong>{{ line.description }}</strong>
+          <span>Qty {{ line.quantity }}</span>
+        </div>
+        <div class="small text-muted">{{ line.template.code }} v{{ line.template.version }}</div>
+        <div class="small">
+          Params:
+          {% for pv in line.parameter_values.all %}{{ pv.parameter_code }}={{ pv.value }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+          {% if quote.is_editable %}
+            · <a href="{% url 'quotes:line_parameters' quote.pk line.pk %}">Edit params</a>
+          {% endif %}
+        </div>
+        {% if line.snapshot.totals %}
+        <div class="small mt-1">
+          Cost {{ line.snapshot.totals.total_cost }} → Sell {{ line.snapshot.totals.selling_price }}
+          (mat {{ line.snapshot.totals.material }}, mch {{ line.snapshot.totals.machine }}, lab {{ line.snapshot.totals.labor }})
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p class="text-muted mb-0">No lines yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="bg-white border rounded p-3 mb-3">
+      <h2 class="h6">Customer</h2>
+      <p class="small mb-0">{{ quote.customer.name }}<br>{{ quote.customer.company }}<br>{{ quote.customer.email }}<br>
+      {{ quote.customer.address_line1 }} {{ quote.customer.city }}</p>
+      <p class="small text-muted mt-2 mb-0">Valid until: {{ quote.valid_until|default:"—" }}</p>
+      <p class="small">{{ quote.notes }}</p>
+    </div>
+    {% if quote.calculation %}
+    <div class="bg-white border rounded p-3">
+      <h2 class="h6">Internal cost breakdown</h2>
+      <p class="small text-muted">Shown on-screen only — customer PDF hides internal cost.</p>
+      <ul class="small mb-0">
+        <li>Material: {{ quote.calculation.data.totals.material }}</li>
+        <li>Machine: {{ quote.calculation.data.totals.machine }}</li>
+        <li>Labor: {{ quote.calculation.data.totals.labor }}</li>
+        <li>Other: {{ quote.calculation.data.totals.other }}</li>
+        <li><strong>Total cost:</strong> {{ quote.calculation.data.totals.total_cost }}</li>
+        <li><strong>Selling:</strong> {{ quote.calculation.data.totals.selling_price }}</li>
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Labor Roles{% endblock %}
+{% block breadcrumb %}Catalog / Labor{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h1 class="h3">Labor Roles</h1>
+  <a class="btn btn-outline-primary" href="{% url 'imports_excel:hub' %}">Import from Excel</a>
+</div>
+{% if roles %}
+<table class="table table-hover bg-white">
+  <thead><tr><th>Code</th><th>Name</th><th>Plant</th><th>Hourly Rate</th><th>Active</th></tr></thead>
+  <tbody>
+  {% for r in roles %}
+  <tr><td>{{ r.code }}</td><td>{{ r.name }}</td><td>{{ r.plant.code }}</td><td>{{ r.hourly_rate }}</td><td>{% if r.is_active %}Yes{% else %}No{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No labor roles yet — download template from Imports.</p></div>
+{% endif %}
+{% endblock %}

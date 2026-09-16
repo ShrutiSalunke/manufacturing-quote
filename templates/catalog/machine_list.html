@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Machines{% endblock %}
+{% block breadcrumb %}Catalog / Machines{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h1 class="h3">Machines / Work Centers</h1>
+  <a class="btn btn-outline-primary" href="{% url 'imports_excel:hub' %}">Import from Excel</a>
+</div>
+{% if machines %}
+<table class="table table-hover bg-white">
+  <thead><tr><th>Code</th><th>Name</th><th>Plant</th><th>Hourly</th><th>Setup</th><th>Efficiency %</th><th>Active</th></tr></thead>
+  <tbody>
+  {% for m in machines %}
+  <tr>
+    <td>{{ m.code }}</td><td>{{ m.name }}</td><td>{{ m.plant.code }}</td>
+    <td>{{ m.hourly_rate }}</td><td>{{ m.setup_rate }}</td><td>{{ m.efficiency_percent }}</td>
+    <td>{% if m.is_active %}Yes{% else %}No{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No machines yet — download template from Imports.</p></div>
+{% endif %}
+{% endblock %}

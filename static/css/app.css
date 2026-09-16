@@ -1,0 +1,36 @@
+:root {
+  --mq-sidebar-width: 260px;
+  --mq-accent: #0f6b5c;
+  --mq-bg: #f4f7f6;
+}
+body { background: var(--mq-bg); }
+.sidebar {
+  width: var(--mq-sidebar-width);
+  min-height: 100vh;
+  flex-shrink: 0;
+}
+.sidebar .nav-link { border-radius: 0.4rem; }
+.sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.08); }
+.stat-card {
+  background: #fff;
+  border: 1px solid #e2e8e6;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+.empty-state {
+  background: #fff;
+  border: 1px dashed #cbd5d1;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+}
+.shepherd-theme-arrows { z-index: 10000; }
+pre.trace {
+  max-height: 420px;
+  overflow: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+}

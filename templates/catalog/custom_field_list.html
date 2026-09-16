@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Custom Fields{% endblock %}
+{% block breadcrumb %}Catalog / Custom Fields{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <div>
+    <h1 class="h3 mb-1">Custom Fields</h1>
+    <p class="text-muted mb-0">Add importable columns without changing code. Templates regenerate on download.</p>
+  </div>
+  <a class="btn btn-success" href="{% url 'catalog:custom_field_create' %}">Add field</a>
+</div>
+{% if fields %}
+<table class="table table-hover bg-white">
+  <thead><tr><th>Key</th><th>Label</th><th>Entity</th><th>Type</th><th>Import header</th><th>Active</th><th></th></tr></thead>
+  <tbody>
+  {% for f in fields %}
+  <tr>
+    <td><code>{{ f.key }}</code></td>
+    <td>{{ f.label }}</td>
+    <td>{{ f.get_entity_type_display }}</td>
+    <td>{{ f.data_type }}</td>
+    <td>{{ f.import_column_header }}</td>
+    <td>{% if f.is_active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-secondary">Inactive</span>{% endif %}</td>
+    <td class="text-end">
+      <a class="btn btn-sm btn-outline-primary" href="{% url 'catalog:custom_field_edit' f.pk %}">Edit</a>
+      <form class="d-inline" method="post" action="{% url 'catalog:custom_field_toggle' f.pk %}">{% csrf_token %}
+        <button class="btn btn-sm btn-outline-secondary" type="submit">{% if f.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No custom fields yet. Add one to extend Excel import columns.</p></div>
+{% endif %}
+{% endblock %}

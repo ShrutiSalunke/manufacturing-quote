@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ material.code }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'catalog:material_list' %}">Materials</a> / {{ material.code }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">{{ material.name }}</h1>
+<dl class="row bg-white p-3 rounded border">
+  <dt class="col-sm-3">Code</dt><dd class="col-sm-9">{{ material.code }}</dd>
+  <dt class="col-sm-3">Plant</dt><dd class="col-sm-9">{{ material.plant }}</dd>
+  <dt class="col-sm-3">UOM</dt><dd class="col-sm-9">{{ material.uom }}</dd>
+  <dt class="col-sm-3">Density</dt><dd class="col-sm-9">{{ material.density|default:"—" }}</dd>
+  <dt class="col-sm-3">Category</dt><dd class="col-sm-9">{{ material.category|default:"—" }}</dd>
+  <dt class="col-sm-3">Unit price</dt><dd class="col-sm-9">{{ material.unit_price }} {{ material.currency }}</dd>
+  <dt class="col-sm-3">Effective</dt><dd class="col-sm-9">{{ material.effective_from|default:"—" }} → {{ material.effective_to|default:"—" }}</dd>
+</dl>
+{% endblock %}

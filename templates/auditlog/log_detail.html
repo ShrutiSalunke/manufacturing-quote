@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Log Detail{% endblock %}
+{% block breadcrumb %}<a href="{% url 'auditlog:log_list' %}">Error Logs</a> / {{ log.pk }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">SystemLog #{{ log.pk }}</h1>
+<dl class="row bg-white border rounded p-3">
+  <dt class="col-sm-3">Level</dt><dd class="col-sm-9">{{ log.level }}</dd>
+  <dt class="col-sm-3">Event</dt><dd class="col-sm-9">{{ log.event_type }}</dd>
+  <dt class="col-sm-3">Source</dt><dd class="col-sm-9">{{ log.source }}</dd>
+  <dt class="col-sm-3">Correlation ID</dt><dd class="col-sm-9"><code>{{ log.correlation_id }}</code></dd>
+  <dt class="col-sm-3">When</dt><dd class="col-sm-9">{{ log.created_at }}</dd>
+  <dt class="col-sm-3">User</dt><dd class="col-sm-9">{{ log.user|default:"—" }}</dd>
+  <dt class="col-sm-3">Request</dt><dd class="col-sm-9">{{ log.http_method }} {{ log.request_path }}</dd>
+  <dt class="col-sm-3">Message</dt><dd class="col-sm-9">{{ log.message }}</dd>
+  <dt class="col-sm-3">Context</dt><dd class="col-sm-9"><pre class="small mb-0">{{ log.context }}</pre></dd>
+</dl>
+{% if log.traceback %}
+<h2 class="h6 mt-3">Traceback</h2>
+<pre class="trace">{{ log.traceback }}</pre>
+{% endif %}
+{% endblock %}

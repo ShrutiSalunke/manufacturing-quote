@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Imports{% endblock %}
+{% block breadcrumb %}Imports{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Excel Imports</h1>
+<p class="text-muted">Download a template (includes active custom field columns), fill rows, upload. Partial success is allowed.</p>
+<div class="row g-3 mb-4">
+  {% for card in cards %}
+  <div class="col-md-6 col-xl-3">
+    <div class="stat-card h-100">
+      <h2 class="h5">{{ card.title }}</h2>
+      <p class="small text-muted">{{ card.desc }}</p>
+      <a class="btn btn-sm btn-outline-primary mb-2" href="{% url 'imports_excel:download_template' card.type %}">Download template</a>
+      <form method="post" enctype="multipart/form-data" action="{% url 'imports_excel:upload' card.type %}">
+        {% csrf_token %}
+        <input type="file" name="file" accept=".xlsx" class="form-control form-control-sm mb-2" required>
+        <button class="btn btn-sm btn-success" type="submit">Upload</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<h2 class="h5">Recent import jobs</h2>
+{% if jobs %}
+<table class="table table-sm bg-white">
+  <thead><tr><th>When</th><th>Type</th><th>Status</th><th>OK</th><th>Failed</th><th>By</th><th></th></tr></thead>
+  <tbody>
+  {% for j in jobs %}
+  <tr>
+    <td>{{ j.created_at }}</td>
+    <td>{{ j.get_entity_type_display }}</td>
+    <td>{{ j.status }}</td>
+    <td>{{ j.row_success }}</td>
+    <td>{{ j.row_failed }}</td>
+    <td>{{ j.created_by }}</td>
+    <td><a href="{% url 'imports_excel:job_detail' j.pk %}">Details</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No imports yet.</p></div>
+{% endif %}
+{% endblock %}

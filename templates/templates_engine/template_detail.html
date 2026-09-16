@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ tmpl.code }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'templates_engine:template_list' %}">Templates</a> / {{ tmpl.code }} v{{ tmpl.version }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ tmpl.name }}</h1>
+    <div class="text-muted">{{ tmpl.code }} · v{{ tmpl.version }} · {{ tmpl.status }} · {{ tmpl.plant.code }}</div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if is_admin %}
+      {% if can_edit %}
+        <a class="btn btn-outline-primary btn-sm" href="{% url 'templates_engine:template_edit' tmpl.pk %}">Edit</a>
+        <form method="post" action="{% url 'templates_engine:template_publish' tmpl.pk %}">{% csrf_token %}
+          <button class="btn btn-success btn-sm" type="submit">Publish</button>
+        </form>
+      {% endif %}
+      <form method="post" action="{% url 'templates_engine:template_new_version' tmpl.pk %}">{% csrf_token %}
+        <button class="btn btn-outline-secondary btn-sm" type="submit">Save as new version</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="alert alert-light border small">
+  <strong>Costing help:</strong> setup formulas = minutes per batch (not × LINE_QTY).
+  Cycle &amp; labor formulas = minutes per piece (× LINE_QTY). Named formulas evaluate first; cost elements may use TOTAL_MATERIAL / TOTAL_MACHINE / TOTAL_LABOR.
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="bg-white border rounded p-3 mb-3">
+      <div class="d-flex justify-content-between"><h2 class="h6">Parameters</h2>
+        {% if can_edit %}<a href="{% url 'templates_engine:add_parameter' tmpl.pk %}">Add</a>{% endif %}</div>
+      <ul class="mb-0 small">{% for p in tmpl.parameters.all %}<li><code>{{ p.code }}</code> — {{ p.label }} ({{ p.unit }})</li>{% empty %}<li class="text-muted">None</li>{% endfor %}</ul>
+    </div>
+    <div class="bg-white border rounded p-3 mb-3">
+      <div class="d-flex justify-content-between"><h2 class="h6">Formulas</h2>
+        {% if can_edit %}<a href="{% url 'templates_engine:add_formula' tmpl.pk %}">Add</a>{% endif %}</div>
+      <ul class="mb-0 small">{% for f in tmpl.formulas.all %}<li><code>{{ f.code }}</code> = {{ f.expression }}</li>{% empty %}<li class="text-muted">None</li>{% endfor %}</ul>
+    </div>
+    <div class="bg-white border rounded p-3 mb-3">
+      <div class="d-flex justify-content-between"><h2 class="h6">BOM</h2>
+        {% if can_edit %}<a href="{% url 'templates_engine:add_bom' tmpl.pk %}">Add</a>{% endif %}</div>
+      <ul class="mb-0 small">{% for b in tmpl.bom_items.all %}<li>{{ b.name }} {% if b.material %}({{ b.material.code }}){% endif %} qty={{ b.qty_formula }} scrap={{ b.scrap_formula }}</li>{% empty %}<li class="text-muted">None</li>{% endfor %}</ul>
+    </div>
+    <div class="bg-white border rounded p-3 mb-3">
+      <div class="d-flex justify-content-between"><h2 class="h6">Operations</h2>
+        {% if can_edit %}<a href="{% url 'templates_engine:add_operation' tmpl.pk %}">Add</a>{% endif %}</div>
+      <ul class="mb-0 small">{% for o in tmpl.operations.all %}<li>{{ o.sequence }}. {{ o.name }} — cycle={{ o.cycle_time_formula_min }}</li>{% empty %}<li class="text-muted">None</li>{% endfor %}</ul>
+    </div>
+    <div class="bg-white border rounded p-3 mb-3">
+      <div class="d-flex justify-content-between"><h2 class="h6">Cost elements</h2>
+        {% if can_edit %}<a href="{% url 'templates_engine:add_cost_element' tmpl.pk %}">Add</a>{% endif %}</div>
+      <ul class="mb-0 small">{% for c in tmpl.cost_elements.all %}<li><code>{{ c.code }}</code> {{ c.amount_formula }}</li>{% empty %}<li class="text-muted">None</li>{% endfor %}</ul>
+    </div>
+    <div class="bg-white border rounded p-3 mb-3">
+      <div class="d-flex justify-content-between"><h2 class="h6">Margin</h2>
+        {% if can_edit %}<a href="{% url 'templates_engine:edit_margin' tmpl.pk %}">Edit</a>{% endif %}</div>
+      {% if tmpl.margin_rule %}
+      <p class="small mb-0">{{ tmpl.margin_rule.get_method_display }}: {{ tmpl.margin_rule.value_or_formula }}</p>
+      {% else %}<p class="small text-muted mb-0">Not set</p>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="bg-white border rounded p-3">
+      <h2 class="h6">Test calculator</h2>
+      <p class="small text-muted">Evaluate costs without creating a quote.</p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="test_calc">
+        {% for field in test_form %}
+        <div class="mb-2">
+          <label class="form-label small mb-0">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+        <button class="btn btn-primary btn-sm" type="submit">Calculate</button>
+      </form>
+      {% if test_result %}
+      <hr>
+      <h3 class="h6">Results</h3>
+      <ul class="small mb-0">
+        <li>Material: {{ test_result.totals.material }}</li>
+        <li>Machine: {{ test_result.totals.machine }}</li>
+        <li>Labor: {{ test_result.totals.labor }}</li>
+        <li>Other: {{ test_result.totals.other }}</li>
+        <li><strong>Total cost:</strong> {{ test_result.totals.total_cost }}</li>
+        <li><strong>Selling:</strong> {{ test_result.totals.selling_price }} (margin {{ test_result.totals.margin_percent }}%)</li>
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

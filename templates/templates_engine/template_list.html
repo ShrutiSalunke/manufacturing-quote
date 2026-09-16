@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Product Templates{% endblock %}
+{% block breadcrumb %}Product Templates{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h1 class="h3">Product Templates</h1>
+  {% if user.is_app_admin %}<a class="btn btn-success" href="{% url 'templates_engine:template_create' %}">New template</a>{% endif %}
+</div>
+{% if templates %}
+<table class="table table-hover bg-white">
+  <thead><tr><th>Code</th><th>Name</th><th>Version</th><th>Status</th><th>Plant</th><th>Family</th></tr></thead>
+  <tbody>
+  {% for t in templates %}
+  <tr>
+    <td><a href="{% url 'templates_engine:template_detail' t.pk %}">{{ t.code }}</a></td>
+    <td>{{ t.name }}</td>
+    <td>v{{ t.version }}</td>
+    <td><span class="badge text-bg-{% if t.status == 'PUBLISHED' %}success{% else %}secondary{% endif %}">{{ t.status }}</span></td>
+    <td>{{ t.plant.code }}</td>
+    <td>{{ t.family.code }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No product templates yet. Admins can create one or run <code>seed_demo</code>.</p></div>
+{% endif %}
+{% endblock %}

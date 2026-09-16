@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Error Logs{% endblock %}
+{% block breadcrumb %}Error Logs (database){% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">Error Logs</h1>
+    <p class="text-muted mb-0">System of record is the <code>SystemLog</code> database table — not a log file. Search by correlation id from flash messages.</p>
+  </div>
+  <form method="post" action="{% url 'auditlog:log_purge' %}" class="d-flex gap-2 align-items-end" onsubmit="return confirm('Delete old logs?');">
+    {% csrf_token %}
+    <div>
+      <label class="form-label small mb-0">Delete older than (days)</label>
+      <input type="number" name="days" value="30" min="1" class="form-control form-control-sm" style="width:100px">
+    </div>
+    <button class="btn btn-outline-danger btn-sm" type="submit">Purge</button>
+  </form>
+</div>
+
+<form method="get" class="row g-2 bg-white border rounded p-3 mb-3">
+  <div class="col-md-2">
+    <label class="form-label small">Level</label>
+    <select name="level" class="form-select form-select-sm">
+      <option value="">All</option>
+      {% for val,label in levels %}<option value="{{ val }}" {% if filters.level == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small">Event</label>
+    <select name="event_type" class="form-select form-select-sm">
+      <option value="">All</option>
+      {% for val,label in event_types %}<option value="{{ val }}" {% if filters.event_type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small">From</label>
+    <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control form-control-sm">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small">To</label>
+    <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control form-control-sm">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label small">Search</label>
+    <input type="text" name="q" value="{{ filters.q }}" class="form-control form-control-sm" placeholder="message / traceback / correlation id">
+  </div>
+  <div class="col-md-1 d-flex align-items-end">
+    <button class="btn btn-primary btn-sm w-100" type="submit">Filter</button>
+  </div>
+</form>
+
+{% if logs %}
+<table class="table table-sm table-hover bg-white">
+  <thead><tr><th>When</th><th>Level</th><th>Event</th><th>Source</th><th>Message</th><th>Correlation</th></tr></thead>
+  <tbody>
+  {% for log in logs %}
+  <tr>
+    <td class="small">{{ log.created_at }}</td>
+    <td><span class="badge text-bg-{% if log.level == 'ERROR' or log.level == 'CRITICAL' %}danger{% elif log.level == 'WARNING' %}warning{% else %}secondary{% endif %}">{{ log.level }}</span></td>
+    <td>{{ log.event_type }}</td>
+    <td>{{ log.source }}</td>
+    <td><a href="{% url 'auditlog:log_detail' log.pk %}">{{ log.message|truncatechars:80 }}</a></td>
+    <td><code class="small">{{ log.correlation_id }}</code></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No log rows match. Demo seed inserts a few INFO rows.</p></div>
+{% endif %}
+{% endblock %}

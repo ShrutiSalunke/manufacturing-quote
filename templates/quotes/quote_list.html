@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Quotes{% endblock %}
+{% block breadcrumb %}Quotes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h1 class="h3">Quotes</h1>
+  <a class="btn btn-success" href="{% url 'quotes:quote_create' %}">New quote</a>
+</div>
+{% if quotes %}
+<table class="table table-hover bg-white">
+  <thead><tr><th>Number</th><th>Customer</th><th>Plant</th><th>Status</th><th>Created</th></tr></thead>
+  <tbody>
+  {% for q in quotes %}
+  <tr>
+    <td><a href="{% url 'quotes:quote_detail' q.pk %}">{{ q.number }}</a></td>
+    <td>{{ q.customer }}</td>
+    <td>{{ q.plant.code }}</td>
+    <td>{{ q.status }}</td>
+    <td>{{ q.created_at }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><p>No quotes yet.</p><a class="btn btn-success" href="{% url 'quotes:quote_create' %}">Create quote</a></div>
+{% endif %}
+{% endblock %}

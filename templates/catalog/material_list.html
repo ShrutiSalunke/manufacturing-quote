@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Materials{% endblock %}
+{% block breadcrumb %}Catalog / Materials{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h1 class="h3">Materials</h1>
+  <a class="btn btn-outline-primary" href="{% url 'imports_excel:hub' %}">Import from Excel</a>
+</div>
+{% if materials %}
+<table class="table table-hover bg-white align-middle">
+  <thead><tr><th>Code</th><th>Name</th><th>Plant</th><th>UOM</th><th>Density</th><th>Unit Price</th><th>Active</th></tr></thead>
+  <tbody>
+  {% for m in materials %}
+    <tr>
+      <td><a href="{% url 'catalog:material_detail' m.pk %}">{{ m.code }}</a></td>
+      <td>{{ m.name }}</td>
+      <td>{{ m.plant.code }}</td>
+      <td>{{ m.uom }}</td>
+      <td>{{ m.density|default:"—" }}</td>
+      <td>{{ m.unit_price }} {{ m.currency }}</td>
+      <td>{% if m.is_active %}Yes{% else %}No{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <p class="mb-2">No materials yet — download template and import.</p>
+  <a class="btn btn-primary" href="{% url 'imports_excel:download_template' 'MATERIAL' %}">Download materials template</a>
+</div>
+{% endif %}
+{% endblock %}

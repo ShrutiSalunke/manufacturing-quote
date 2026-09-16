@@ -1,0 +1,40 @@
+# Exported by Render Blueprint. Connects a web service + Postgres.
+# Dashboard: New → Blueprint → select this repo.
+
+databases:
+  - name: manufacturing-quote-db
+    plan: free
+
+services:
+  - type: web
+    name: manufacturing-quote
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    healthCheckPath: /accounts/login/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: manufacturing-quote-db
+          property: connectionString
+      - key: DATABASE_SSL
+        value: "true"
+      - key: COMPANY_NAME
+        value: Prasad Manufacturing
+      # Set after first deploy if needed (Render also injects RENDER_EXTERNAL_HOSTNAME):
+      # DJANGO_ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS are derived from RENDER_EXTERNAL_HOSTNAME
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
