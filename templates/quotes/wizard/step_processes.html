@@ -1,0 +1,45 @@
+{% extends "quotes/wizard/base_wizard.html" %}
+{% load static %}
+{% block wizard_body %}
+{{ process_options|json_script:"mq-process-options" }}
+{{ existing_blocks|json_script:"mq-existing-blocks" }}
+<form method="post" class="mq-wizard-panel" id="mq-wizard-processes-form" novalidate
+      data-schema-url="{{ process_schema_url }}"
+      data-autofill-url="{{ process_autofill_url }}">
+  {% csrf_token %}
+  <input type="hidden" name="block_count" id="id_block_count" value="0">
+  {% for qp in quote.quote_processes.all %}
+  <input type="hidden" name="initial_qp_ids" value="{{ qp.pk }}">
+  {% endfor %}
+
+  <div class="mb-3">
+    <h2 class="mq-wizard-panel-title mb-0">Processes</h2>
+  </div>
+
+  <div id="mq-process-blocks"></div>
+
+  <div class="mq-block-add-row">
+    <button type="button" class="btn mq-btn-theme mq-master-add btn-sm" id="mq-add-process-block">
+      Add Process
+    </button>
+  </div>
+
+  <div class="mq-wizard-actions">
+    <button class="btn btn-outline-secondary" type="submit" name="wizard_action" value="back">Back</button>
+    <div class="mq-wizard-actions-right">
+      <button class="btn btn-outline-dark" type="submit" name="wizard_action" value="save_processes">
+        Save
+      </button>
+      <button class="btn mq-btn-theme" type="submit" name="wizard_action" value="next">Continue to Preview</button>
+    </div>
+  </div>
+</form>
+<script src="{% static 'js/mq-wizard-processes.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.MQWizardProcesses) {
+      window.MQWizardProcesses.init({ formId: "mq-wizard-processes-form" });
+    }
+  });
+</script>
+{% endblock %}

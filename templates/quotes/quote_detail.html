@@ -1,147 +1,240 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ quote.number }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
 {% block breadcrumb %}<a href="{% url 'quotes:quote_list' %}">Quotes</a> / {{ quote.number }}{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-start mb-3">
-  <div>
-    <h1 class="h3 mb-1">{{ quote.number }} <span class="badge text-bg-secondary">{{ quote.status }}</span></h1>
-    <div class="text-muted">{{ quote.customer|default:"No client" }} · {{ quote.plant }} · {{ quote.currency }}</div>
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <div class="mq-detail-heading">
+      <h1 class="mq-master-title">{{ quote.number }}</h1>
+      {% if quote.status == 'DRAFT' %}
+        <span class="mq-status-pill is-inactive">Draft</span>
+      {% elif quote.status == 'CALCULATED' %}
+        <span class="mq-status-pill is-active">Calculated</span>
+      {% elif quote.status == 'ISSUED' %}
+        <span class="mq-status-pill is-issued">Issued</span>
+      {% else %}
+        <span class="mq-status-pill is-inactive">{{ quote.status }}</span>
+      {% endif %}
+    </div>
+    <div class="mq-master-controls">
+      {% if quote.is_editable %}
+        <a class="btn mq-btn-theme mq-master-add" href="{% url 'quotes:wizard_step' quote.pk 'details' %}">Continue wizard</a>
+        <form method="post" action="{% url 'quotes:quote_calculate' quote.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-outline-dark mq-master-add" type="submit">Calculate</button>
+        </form>
+      {% endif %}
+      {% if quote.status == 'CALCULATED' or quote.status == 'ISSUED' %}
+        <a class="btn mq-btn-theme mq-master-add" href="{% url 'quotes:quote_pdf' quote.pk %}">Download PDF</a>
+      {% endif %}
+      {% if quote.status == 'CALCULATED' %}
+        <form method="post" action="{% url 'quotes:quote_issue' quote.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-outline-dark mq-master-add" type="submit">Mark Issued</button>
+        </form>
+      {% endif %}
+      {% if quote.status == 'ISSUED' %}
+        <form method="post" action="{% url 'quotes:quote_clone' quote.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-outline-secondary mq-master-add" type="submit">New version</button>
+        </form>
+      {% endif %}
+    </div>
   </div>
-  <div class="d-flex gap-2 flex-wrap">
-    {% if quote.is_editable %}
-      <a class="btn btn-primary btn-sm" href="{% url 'processes:quote_add_process' quote.pk %}">Add process</a>
-      <form method="post" action="{% url 'quotes:quote_calculate' quote.pk %}">{% csrf_token %}
-        <button class="btn btn-outline-primary btn-sm" type="submit">Calculate</button>
-      </form>
-    {% endif %}
-    {% if quote.status == 'CALCULATED' or quote.status == 'ISSUED' %}
-      <a class="btn btn-success btn-sm" href="{% url 'quotes:quote_pdf' quote.pk %}">Generate / Download PDF</a>
-    {% endif %}
-    {% if quote.status == 'CALCULATED' %}
-      <form method="post" action="{% url 'quotes:quote_issue' quote.pk %}">{% csrf_token %}
-        <button class="btn btn-outline-dark btn-sm" type="submit">Mark Issued</button>
-      </form>
-    {% endif %}
-    {% if quote.status == 'ISSUED' %}
-      <form method="post" action="{% url 'quotes:quote_clone' quote.pk %}">{% csrf_token %}
-        <button class="btn btn-outline-secondary btn-sm" type="submit">New version (clone)</button>
-      </form>
-    {% endif %}
-  </div>
-</div>
 
-<div class="row g-3">
-  <div class="col-lg-7">
-    <div class="bg-white border rounded p-3 mb-3">
-      <h2 class="h6">Processes</h2>
-      {% for qp in quote.quote_processes.all %}
-      <div class="border rounded p-2 mb-2">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <strong>{{ qp.process.code }}</strong> — {{ qp.process.name }}
-            {% if qp.material %}<span class="text-muted small">· Mat {{ qp.material.code }}</span>{% endif %}
-          </div>
-          <div class="text-end small">
-            {% if qp.computed_total is not None %}
-              <div>Own: {{ qp.computed_own }} · <strong>Total: {{ qp.computed_total }}</strong> {{ qp.process.result_unit }}</div>
-            {% else %}
-              <span class="text-muted">Not calculated</span>
+  <p class="mq-quote-detail-sub">
+    {{ quote.customer|default:"No client" }} · {{ quote.plant }} · {{ quote.currency }}
+    {% if quote.valid_until %} · Valid until {{ quote.valid_until }}{% endif %}
+  </p>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="mq-master-card mq-detail-card mb-3">
+        <div class="mq-form-section">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <h2 class="mq-form-section-title mb-0">Processes</h2>
+            {% if quote.is_editable %}
+            <a class="btn mq-btn-theme mq-master-add btn-sm" href="{% url 'quotes:wizard_step' quote.pk 'processes' %}">Edit processes</a>
             {% endif %}
           </div>
-        </div>
-        <div class="small mt-1">
-          Fields:
-          {% for fv in qp.field_values.all %}{{ fv.field_code }}={{ fv.value }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
-          {% if quote.is_editable %}
-            · <a href="{% url 'processes:quote_process_fields' quote.pk qp.pk %}">Edit fields</a>
-            · <a href="{% url 'processes:quote_add_subprocess' quote.pk qp.pk %}">Add sub process</a>
-            <form class="d-inline" method="post" action="{% url 'processes:quote_process_remove' quote.pk qp.pk %}">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-link btn-sm text-danger p-0"
-                data-mq-confirm-submit data-mq-title="Remove process?" data-mq-message="Remove {{ qp.process.code }} from this quote?" data-mq-confirm-label="Remove" data-mq-variant="danger">Remove</button>
-            </form>
-          {% endif %}
-        </div>
-        {% if qp.subprocesses.exists %}
-        <ul class="small mb-0 mt-2 ps-3">
-          {% for qs in qp.subprocesses.all %}
-          <li>
-            <strong>{{ qs.subprocess.code }}</strong>
-            {% if qs.computed_value is not None %}→ {{ qs.computed_value }} {{ qs.subprocess.result_unit }}{% endif %}
+
+          {% for qp in quote.quote_processes.all %}
+          <div class="mq-quote-process-item">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div>
+                <div class="mq-quote-process-name">
+                  <strong>{{ qp.process.code }}</strong> — {{ qp.process.name }}
+                </div>
+                {% if qp.material %}
+                <div class="small text-muted">Material {{ qp.material.code }}</div>
+                {% endif %}
+              </div>
+              <div class="text-end small">
+                {% if qp.computed_total is not None %}
+                  <div>Own: {{ qp.computed_own }}</div>
+                  <div><strong>Total: {{ qp.computed_total }}</strong> {{ qp.process.result_unit }}</div>
+                {% else %}
+                  <span class="text-muted">Not calculated</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="small mt-2 mq-quote-field-list">
+              {% for fv in qp.field_values.all %}
+                <span class="mq-quote-field-chip">{{ fv.field_code }}={{ fv.value }}</span>
+              {% empty %}
+                <span class="text-muted">No field values</span>
+              {% endfor %}
+            </div>
+            {% if qp.subprocesses.exists %}
+            <ul class="mq-quote-sub-list">
+              {% for qs in qp.subprocesses.all %}
+              <li>
+                <strong>{{ qs.subprocess.code }}</strong>
+                {% if qs.computed_value is not None %}
+                  <span class="text-muted">→ {{ qs.computed_value }} {{ qs.subprocess.result_unit }}</span>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
             {% if quote.is_editable %}
-              · <a href="{% url 'processes:quote_subprocess_fields' quote.pk qp.pk qs.pk %}">Edit</a>
-              <form class="d-inline" method="post" action="{% url 'processes:quote_subprocess_remove' quote.pk qp.pk qs.pk %}">
+            <div class="mt-2">
+              <form class="d-inline" method="post" action="{% url 'processes:quote_process_remove' quote.pk qp.pk %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-link btn-sm text-danger p-0"
-                  data-mq-confirm-submit data-mq-title="Remove sub process?" data-mq-message="Remove {{ qs.subprocess.code }}?" data-mq-confirm-label="Remove" data-mq-variant="danger">Remove</button>
+                  data-mq-confirm-submit data-mq-title="Remove process?"
+                  data-mq-message="Remove {{ qp.process.code }} from this quote?"
+                  data-mq-confirm-label="Remove" data-mq-variant="danger">Remove</button>
               </form>
+            </div>
             {% endif %}
-          </li>
+          </div>
+          {% empty %}
+          <p class="text-muted mb-0">No processes yet. Use Continue wizard to add processes.</p>
           {% endfor %}
-        </ul>
-        {% endif %}
+        </div>
       </div>
-      {% empty %}
-      <p class="text-muted mb-0">No processes yet. Add a process to build this quote.</p>
-      {% endfor %}
+
+      {% if quote.lines.exists %}
+      <div class="mq-master-card mq-detail-card">
+        <div class="mq-form-section">
+          <h2 class="mq-form-section-title">Legacy template lines</h2>
+          {% for line in quote.lines.all %}
+          <div class="mq-quote-process-item">
+            <div class="d-flex justify-content-between">
+              <strong>{{ line.description }}</strong>
+              <span class="small">Qty {{ line.quantity }}</span>
+            </div>
+            <div class="small text-muted">{{ line.template.code }} v{{ line.template.version }}</div>
+            {% if line.snapshot.totals %}
+            <div class="small mt-1">
+              Cost {{ line.snapshot.totals.total_cost }} → Sell {{ line.snapshot.totals.selling_price }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
 
-    {% if quote.lines.exists %}
-    {# Legacy template lines — kept for old quotes; not offered in UI for new work #}
-    <div class="bg-white border rounded p-3">
-      <h2 class="h6 text-muted">Legacy template lines</h2>
-      {% for line in quote.lines.all %}
-      <div class="border-bottom py-2">
-        <div class="d-flex justify-content-between">
-          <strong>{{ line.description }}</strong>
-          <span>Qty {{ line.quantity }}</span>
+    <div class="col-lg-5">
+      <div class="mq-master-card mq-detail-card mb-3">
+        <div class="mq-form-section">
+          <h2 class="mq-form-section-title">Client</h2>
+          {% if quote.customer %}
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Code</div>
+              <div class="mq-detail-value">
+                <a href="{% url 'quotes:client_detail' quote.customer.pk %}">{{ quote.customer.code }}</a>
+              </div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Company</div>
+              <div class="mq-detail-value">{{ quote.customer.company|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Contact</div>
+              <div class="mq-detail-value">{{ quote.customer.name }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Email / Phone</div>
+              <div class="mq-detail-value">
+                {{ quote.customer.email|default:"—" }}{% if quote.customer.phone %} · {{ quote.customer.phone }}{% endif %}
+              </div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">GSTIN</div>
+              <div class="mq-detail-value">{{ quote.customer.gstin|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Address</div>
+              <div class="mq-detail-value">
+                {{ quote.customer.address_line1 }} {{ quote.customer.city }}
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <p class="text-muted mb-0">Client was removed from master data.</p>
+          {% endif %}
         </div>
-        <div class="small text-muted">{{ line.template.code }} v{{ line.template.version }}</div>
-        {% if line.snapshot.totals %}
-        <div class="small mt-1">
-          Cost {{ line.snapshot.totals.total_cost }} → Sell {{ line.snapshot.totals.selling_price }}
+        <div class="mq-form-section">
+          <h2 class="mq-form-section-title">Quote info</h2>
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Plant</div>
+              <div class="mq-detail-value">{{ quote.plant }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Valid until</div>
+              <div class="mq-detail-value">{{ quote.valid_until|default:"—" }}</div>
+            </div>
+          </div>
+          {% if quote.notes %}
+          <div class="mt-3">
+            <div class="mq-detail-label">Notes</div>
+            <p class="mq-detail-notes">{{ quote.notes }}</p>
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
       </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  <div class="col-lg-5">
-    <div class="bg-white border rounded p-3 mb-3">
-      <h2 class="h6">Client</h2>
-      {% if quote.customer %}
-      <p class="small mb-0">
-        <a href="{% url 'quotes:client_detail' quote.customer.pk %}">{{ quote.customer.code }}</a><br>
-        {{ quote.customer.name }}{% if quote.customer.company %} / {{ quote.customer.company }}{% endif %}<br>
-        {{ quote.customer.email }}{% if quote.customer.phone %} · {{ quote.customer.phone }}{% endif %}<br>
-        {% if quote.customer.gstin %}GSTIN: {{ quote.customer.gstin }}<br>{% endif %}
-        {{ quote.customer.address_line1 }} {{ quote.customer.city }}
-      </p>
-      {% else %}
-      <p class="small text-muted mb-0">Client was removed from master data.</p>
+
+      {% if quote.calculation %}
+      <div class="mq-master-card mq-detail-card">
+        <div class="mq-form-section">
+          <h2 class="mq-form-section-title">Totals</h2>
+          <div class="mq-detail-grid">
+            {% if quote.calculation.data.totals.process_money is not None %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Process money</div>
+              <div class="mq-detail-value">{{ quote.calculation.data.totals.process_money }} {{ quote.currency }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Process time</div>
+              <div class="mq-detail-value">{{ quote.calculation.data.totals.process_time }}</div>
+            </div>
+            {% endif %}
+            {% if quote.calculation.data.totals.combined_selling is not None %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Combined selling</div>
+              <div class="mq-detail-value"><strong>{{ quote.calculation.data.totals.combined_selling }} {{ quote.currency }}</strong></div>
+            </div>
+            {% elif quote.calculation.data.totals.selling_price %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Selling</div>
+              <div class="mq-detail-value">{{ quote.calculation.data.totals.selling_price }} {{ quote.currency }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
       {% endif %}
-      <p class="small text-muted mt-2 mb-0">Valid until: {{ quote.valid_until|default:"—" }}</p>
-      <p class="small">{{ quote.notes }}</p>
     </div>
-    {% if quote.calculation %}
-    <div class="bg-white border rounded p-3">
-      <h2 class="h6">Totals</h2>
-      <ul class="small mb-0">
-        {% if quote.calculation.data.totals.process_money is not None %}
-        <li><strong>Process money:</strong> {{ quote.calculation.data.totals.process_money }} {{ quote.currency }}</li>
-        <li><strong>Process time:</strong> {{ quote.calculation.data.totals.process_time }}</li>
-        {% endif %}
-        {% if quote.calculation.data.totals.selling_price %}
-        <li>Legacy selling: {{ quote.calculation.data.totals.selling_price }}</li>
-        <li>Legacy total cost: {{ quote.calculation.data.totals.total_cost }}</li>
-        {% endif %}
-        {% if quote.calculation.data.totals.combined_selling is not None %}
-        <li><strong>Combined selling:</strong> {{ quote.calculation.data.totals.combined_selling }} {{ quote.currency }}</li>
-        {% endif %}
-      </ul>
-    </div>
-    {% endif %}
   </div>
 </div>
 {% endblock %}

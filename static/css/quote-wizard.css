@@ -1,0 +1,310 @@
+/* Quote wizard — same tokens as master-table pages */
+.mq-wizard-page {
+  --mq-master-accent: #f5c518;
+  --mq-master-border: #e5e7eb;
+  --mq-master-muted: #9ca3af;
+  --mq-master-text: #111827;
+  --mq-control-radius: 0.55rem;
+}
+
+.mq-wizard-page .mq-master-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--mq-master-text);
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.mq-wizard-sub {
+  color: #6b7280;
+  font-size: 0.925rem;
+  margin: 0 0 1.25rem;
+}
+
+/* Chevron progress */
+.mq-wizard-steps {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  margin: 0 0 1.5rem;
+  list-style: none;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--mq-master-border);
+  border-radius: var(--mq-control-radius);
+  background: #fff;
+}
+
+.mq-wizard-step {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.75rem 0.85rem 1.25rem;
+  background: #fff;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.mq-wizard-step + .mq-wizard-step {
+  padding-left: 2rem;
+}
+
+.mq-wizard-step + .mq-wizard-step::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1.15rem;
+  background: #fff;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  z-index: 1;
+}
+
+.mq-wizard-step::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 0;
+  bottom: 0;
+  width: 1.15rem;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  z-index: 2;
+}
+
+.mq-wizard-step:last-child::after {
+  display: none;
+}
+
+.mq-wizard-step.is-completed {
+  background: #111827;
+  color: #fff;
+}
+
+.mq-wizard-step.is-completed + .mq-wizard-step::before {
+  background: #111827;
+}
+
+.mq-wizard-step.is-current {
+  background: var(--mq-master-accent);
+  color: #111827;
+}
+
+.mq-wizard-step.is-current + .mq-wizard-step::before {
+  background: var(--mq-master-accent);
+}
+
+.mq-wizard-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(17, 24, 39, 0.08);
+  flex-shrink: 0;
+}
+
+.mq-wizard-step.is-completed .mq-wizard-step-num {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.mq-wizard-step.is-current .mq-wizard-step-num {
+  background: #111827;
+  color: #f5c518;
+}
+
+.mq-wizard-step-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mq-wizard-panel {
+  background: #fff;
+  border: 1px solid var(--mq-master-border);
+  border-radius: var(--mq-control-radius);
+  padding: 1.25rem 1.35rem;
+}
+
+.mq-wizard-panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--mq-master-text);
+  margin: 0 0 1rem;
+}
+
+.mq-wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--mq-master-border);
+}
+
+.mq-wizard-actions-right {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.mq-wizard-page .mq-input,
+.mq-wizard-page .form-control,
+.mq-wizard-page .form-select {
+  border-color: var(--mq-master-border);
+  border-radius: var(--mq-control-radius);
+  min-height: 42px;
+}
+
+.mq-wizard-page .form-label {
+  font-weight: 600;
+  color: var(--mq-master-text);
+  font-size: 0.875rem;
+}
+
+.mq-wizard-process-card {
+  border: 1px solid var(--mq-master-border);
+  border-radius: var(--mq-control-radius);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.65rem;
+  background: #fafafa;
+}
+
+.mq-wizard-process-card:last-child {
+  margin-bottom: 0;
+}
+
+.mq-pdf-preview-frame {
+  width: 100%;
+  min-height: 70vh;
+  border: 1px solid var(--mq-master-border);
+  border-radius: var(--mq-control-radius);
+  background: #f3f4f6;
+}
+
+.mq-pdf-preview-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.mq-pdf-preview-tabs .btn.active {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.mq-wizard-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--mq-master-text);
+  margin: 0;
+}
+
+.mq-wizard-divider {
+  border: 0;
+  border-top: 1px solid var(--mq-master-border);
+  margin: 0.35rem 0;
+}
+
+.mq-client-typeahead {
+  position: relative;
+}
+
+.mq-client-suggest {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--mq-master-border);
+  border-radius: var(--mq-control-radius);
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12);
+}
+
+.mq-client-suggest-item {
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--mq-master-text);
+}
+
+.mq-client-suggest-item:hover,
+.mq-client-suggest-item.is-active {
+  background: #f5c518;
+  color: #111827;
+}
+
+.mq-wizard-page .form-control.is-locked,
+.mq-wizard-page .mq-input.is-locked {
+  background: #f3f4f6;
+  color: #4b5563;
+  cursor: default;
+}
+
+.mq-block-add-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.75rem 0 1rem;
+}
+
+.mq-subprocess-section .mq-block-add-row {
+  margin-bottom: 0;
+}
+
+.mq-sub-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.mq-sub-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--mq-master-border);
+  border-radius: var(--mq-control-radius);
+  background: #fafafa;
+  margin: 0;
+  cursor: pointer;
+}
+
+.mq-sub-check .form-check-input {
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 768px) {
+  .mq-wizard-step-label {
+    display: none;
+  }
+
+  .mq-wizard-step {
+    padding: 0.75rem 1.5rem 0.75rem 0.75rem;
+  }
+
+  .mq-wizard-step + .mq-wizard-step {
+    padding-left: 1.5rem;
+  }
+}

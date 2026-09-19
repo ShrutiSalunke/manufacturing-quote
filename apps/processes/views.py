@@ -38,6 +38,21 @@ MASTER_PER_PAGE_CHOICES = (10, 15, 25, 50)
 MASTER_DEFAULT_PER_PAGE = 15
 
 
+def _in_quote_wizard(request) -> bool:
+    return request.GET.get("wizard") == "1" or request.POST.get("wizard") == "1"
+
+
+def _wizard_qs(request) -> str:
+    return "?wizard=1" if _in_quote_wizard(request) else ""
+
+
+def _redirect_quote_home(request, quote_pk):
+    """Return to wizard processes step or quote detail after process edits."""
+    if _in_quote_wizard(request):
+        return redirect("quotes:wizard_step", quote_pk=quote_pk, step_id="processes")
+    return redirect("quotes:quote_detail", pk=quote_pk)
+
+
 def _page_number_window(page_obj, adjacent=1):
     current = page_obj.number
     total = page_obj.paginator.num_pages
@@ -448,6 +463,7 @@ def quote_add_process(request, quote_pk):
     if not quote.is_editable:
         messages.error(request, "Issued quotes are locked.")
         return redirect("quotes:quote_detail", pk=quote_pk)
+    wizard_mode = _in_quote_wizard(request)
     if request.method == "POST":
         form = QuoteAddProcessForm(quote, request.POST)
         if form.is_valid():
@@ -457,7 +473,7 @@ def quote_add_process(request, quote_pk):
                 return render(
                     request,
                     "processes/quote_add_process.html",
-                    {"quote": quote, "form": form},
+                    {"quote": quote, "form": form, "wizard_mode": wizard_mode},
                 )
             qp = QuoteProcess.objects.create(
                 quote=quote,
@@ -469,10 +485,18 @@ def quote_add_process(request, quote_pk):
             quote.status = Quote.Status.DRAFT
             quote.save(update_fields=["status", "updated_at"])
             messages.success(request, f"Process {process.code} added. Enter field values.")
-            return redirect("processes:quote_process_fields", quote_pk=quote_pk, qp_pk=qp.pk)
+            url = reverse(
+                "processes:quote_process_fields",
+                kwargs={"quote_pk": quote_pk, "qp_pk": qp.pk},
+            )
+            return redirect(url + _wizard_qs(request))
     else:
         form = QuoteAddProcessForm(quote)
-    return render(request, "processes/quote_add_process.html", {"quote": quote, "form": form})
+    return render(
+        request,
+        "processes/quote_add_process.html",
+        {"quote": quote, "form": form, "wizard_mode": wizard_mode},
+    )
 
 
 @login_required
@@ -487,6 +511,7 @@ def quote_process_fields(request, quote_pk, qp_pk):
         messages.error(request, "Quote is locked.")
         return redirect("quotes:quote_detail", pk=quote_pk)
 
+    wizard_mode = _in_quote_wizard(request)
     fields = list(qp.process.fields.all())
     initial = {f"fld_{fv.field_code}": fv.value for fv in qp.field_values.all()}
     for f in fields:
@@ -505,18 +530,22 @@ def quote_process_fields(request, quote_pk, qp_pk):
                 calculate_quote_process(qp)
             except Exception as exc:
                 messages.error(request, f"Could not evaluate formula: {exc}")
-                return redirect("processes:quote_process_fields", quote_pk=quote_pk, qp_pk=qp.pk)
+                url = reverse(
+                    "processes:quote_process_fields",
+                    kwargs={"quote_pk": quote_pk, "qp_pk": qp.pk},
+                )
+                return redirect(url + _wizard_qs(request))
             quote.status = Quote.Status.DRAFT
             quote.save(update_fields=["status", "updated_at"])
             messages.success(request, "Process field values saved.")
-            return redirect("quotes:quote_detail", pk=quote_pk)
+            return _redirect_quote_home(request, quote_pk)
     else:
         form = build_dynamic_field_form(fields, initial=initial, prefix="fld")
 
     return render(
         request,
         "processes/quote_process_fields.html",
-        {"quote": quote, "qp": qp, "form": form},
+        {"quote": quote, "qp": qp, "form": form, "wizard_mode": wizard_mode},
     )
 
 
@@ -533,7 +562,7 @@ def quote_process_remove(request, quote_pk, qp_pk):
         quote.status = Quote.Status.DRAFT
         quote.save(update_fields=["status", "updated_at"])
         messages.success(request, f"Process {code} removed from quote.")
-    return redirect("quotes:quote_detail", pk=quote_pk)
+    return _redirect_quote_home(request, quote_pk)
 
 
 @login_required
@@ -543,6 +572,7 @@ def quote_add_subprocess(request, quote_pk, qp_pk):
     if not quote.is_editable:
         messages.error(request, "Quote is locked.")
         return redirect("quotes:quote_detail", pk=quote_pk)
+    wizard_mode = _in_quote_wizard(request)
     if request.method == "POST":
         form = QuoteAddSubProcessForm(qp, request.POST)
         if form.is_valid():
@@ -556,18 +586,17 @@ def quote_add_subprocess(request, quote_pk, qp_pk):
             quote.status = Quote.Status.DRAFT
             quote.save(update_fields=["status", "updated_at"])
             messages.success(request, f"Sub process {sp.code} added.")
-            return redirect(
+            url = reverse(
                 "processes:quote_subprocess_fields",
-                quote_pk=quote_pk,
-                qp_pk=qp.pk,
-                qs_pk=qs.pk,
+                kwargs={"quote_pk": quote_pk, "qp_pk": qp.pk, "qs_pk": qs.pk},
             )
+            return redirect(url + _wizard_qs(request))
     else:
         form = QuoteAddSubProcessForm(qp)
     return render(
         request,
         "processes/quote_add_subprocess.html",
-        {"quote": quote, "qp": qp, "form": form},
+        {"quote": quote, "qp": qp, "form": form, "wizard_mode": wizard_mode},
     )
 
 
@@ -584,6 +613,7 @@ def quote_subprocess_fields(request, quote_pk, qp_pk, qs_pk):
         messages.error(request, "Quote is locked.")
         return redirect("quotes:quote_detail", pk=quote_pk)
 
+    wizard_mode = _in_quote_wizard(request)
     fields = list(qs.subprocess.fields.all())
     initial = {f"fld_{fv.field_code}": fv.value for fv in qs.field_values.all()}
     for f in fields:
@@ -602,23 +632,22 @@ def quote_subprocess_fields(request, quote_pk, qp_pk, qs_pk):
                 calculate_quote_process(qp)
             except Exception as exc:
                 messages.error(request, f"Could not evaluate formula: {exc}")
-                return redirect(
+                url = reverse(
                     "processes:quote_subprocess_fields",
-                    quote_pk=quote_pk,
-                    qp_pk=qp.pk,
-                    qs_pk=qs.pk,
+                    kwargs={"quote_pk": quote_pk, "qp_pk": qp.pk, "qs_pk": qs.pk},
                 )
+                return redirect(url + _wizard_qs(request))
             quote.status = Quote.Status.DRAFT
             quote.save(update_fields=["status", "updated_at"])
             messages.success(request, "Sub process field values saved.")
-            return redirect("quotes:quote_detail", pk=quote_pk)
+            return _redirect_quote_home(request, quote_pk)
     else:
         form = build_dynamic_field_form(fields, initial=initial, prefix="fld")
 
     return render(
         request,
         "processes/quote_subprocess_fields.html",
-        {"quote": quote, "qp": qp, "qs": qs, "form": form},
+        {"quote": quote, "qp": qp, "qs": qs, "form": form, "wizard_mode": wizard_mode},
     )
 
 
@@ -640,4 +669,4 @@ def quote_subprocess_remove(request, quote_pk, qp_pk, qs_pk):
         quote.status = Quote.Status.DRAFT
         quote.save(update_fields=["status", "updated_at"])
         messages.success(request, f"Sub process {code} removed.")
-    return redirect("quotes:quote_detail", pk=quote_pk)
+    return _redirect_quote_home(request, quote_pk)

@@ -1,0 +1,126 @@
+{% extends "quotes/wizard/base_wizard.html" %}
+{% load static %}
+{% block wizard_body %}
+{{ wizard_client_fields|json_script:"mq-client-field-names" }}
+<form method="post" class="mq-wizard-panel" id="mq-wizard-details-form" novalidate
+      data-client-suggest-url="{{ client_suggest_url }}">
+  {% csrf_token %}
+  <h2 class="mq-wizard-panel-title">Quote details</h2>
+
+  {{ qform.customer_id }}
+  {% for e in qform.customer_id.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  {% for e in qform.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+
+  <div class="row g-3">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+      <h3 class="mq-wizard-section-title mb-0">Client information</h3>
+      <button type="button" class="btn mq-btn-theme mq-master-add btn-sm {% if not client_locked %}d-none{% endif %}"
+              id="mq-client-change">Change Client</button>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.code.id_for_label }}">{{ qform.code.label }}</label>
+      <div class="mq-client-typeahead" data-suggest-field="code">
+        {{ qform.code }}
+        <ul class="mq-client-suggest" hidden role="listbox"></ul>
+      </div>
+      {% for e in qform.code.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.company.id_for_label }}">{{ qform.company.label }}</label>
+      <div class="mq-client-typeahead" data-suggest-field="company">
+        {{ qform.company }}
+        <ul class="mq-client-suggest" hidden role="listbox"></ul>
+      </div>
+      {% for e in qform.company.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.name.id_for_label }}">{{ qform.name.label }}</label>
+      {{ qform.name }}
+      {% for e in qform.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.email.id_for_label }}">{{ qform.email.label }}</label>
+      {{ qform.email }}
+      {% for e in qform.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.phone.id_for_label }}">{{ qform.phone.label }}</label>
+      {{ qform.phone }}
+      {% for e in qform.phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.gstin.id_for_label }}">{{ qform.gstin.label }}</label>
+      {{ qform.gstin }}
+      {% for e in qform.gstin.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.address_line1.id_for_label }}">{{ qform.address_line1.label }}</label>
+      {{ qform.address_line1 }}
+      {% for e in qform.address_line1.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.address_line2.id_for_label }}">{{ qform.address_line2.label }}</label>
+      {{ qform.address_line2 }}
+      {% for e in qform.address_line2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="{{ qform.city.id_for_label }}">{{ qform.city.label }}</label>
+      {{ qform.city }}
+      {% for e in qform.city.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="{{ qform.state.id_for_label }}">{{ qform.state.label }}</label>
+      {{ qform.state }}
+      {% for e in qform.state.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="{{ qform.postal_code.id_for_label }}">{{ qform.postal_code.label }}</label>
+      {{ qform.postal_code }}
+      {% for e in qform.postal_code.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.country.id_for_label }}">{{ qform.country.label }}</label>
+      {{ qform.country }}
+      {% for e in qform.country.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+
+    <div class="col-12"><hr class="mq-wizard-divider"></div>
+    <div class="col-12"><h3 class="mq-wizard-section-title">Quote</h3></div>
+
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.plant.id_for_label }}">{{ qform.plant.label }}</label>
+      {{ qform.plant }}
+      {% for e in qform.plant.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="{{ qform.valid_until.id_for_label }}">{{ qform.valid_until.label }}</label>
+      {{ qform.valid_until }}
+      {% for e in qform.valid_until.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="col-12">
+      <label class="form-label" for="{{ qform.notes.id_for_label }}">{{ qform.notes.label }}</label>
+      {{ qform.notes }}
+      {% for e in qform.notes.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+  </div>
+
+  <div class="mq-wizard-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'quotes:quote_list' %}">Cancel</a>
+    <div class="mq-wizard-actions-right">
+      <button class="btn mq-btn-theme" type="submit">Save &amp; Continue</button>
+    </div>
+  </div>
+</form>
+<script src="{% static 'js/mq-wizard-client.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.MQWizardClient) {
+      window.MQWizardClient.init({
+        formId: "mq-wizard-details-form",
+        locked: {{ client_locked|yesno:"true,false" }}
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -4,6 +4,7 @@
 <h1 class="h3 mb-3">Add Process to {{ quote.number }}</h1>
 <form method="post" class="bg-white border rounded p-3" style="max-width:560px">
   {% csrf_token %}
+  {% if wizard_mode %}<input type="hidden" name="wizard" value="1">{% endif %}
   {% for field in form %}
   <div class="mb-3">
     <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -12,7 +13,11 @@
   </div>
   {% endfor %}
   <div class="d-flex gap-2 justify-content-end">
+    {% if wizard_mode %}
+    <a class="btn btn-outline-secondary" href="{% url 'quotes:wizard_step' quote.pk 'processes' %}">Cancel</a>
+    {% else %}
     <a class="btn btn-outline-secondary" href="{% url 'quotes:quote_detail' quote.pk %}">Cancel</a>
+    {% endif %}
     <button class="btn mq-btn-theme" type="submit">Continue</button>
   </div>
 </form>

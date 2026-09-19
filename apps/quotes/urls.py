@@ -1,12 +1,46 @@
 from django.urls import path
 
-from . import views
+from . import views, wizard_views
 
 app_name = "quotes"
 
 urlpatterns = [
     path("", views.quote_list, name="quote_list"),
-    path("new/", views.quote_create, name="quote_create"),
+    path("new/", wizard_views.quote_create, name="quote_create"),
+    path("wizard/", wizard_views.wizard_start, name="wizard_start"),
+    path("wizard/<slug:step_id>/", wizard_views.wizard_step_new, name="wizard_step_new"),
+    # Specific wizard resource routes before the step slug catch-all
+    path(
+        "wizard/<int:quote_pk>/preview/html/",
+        wizard_views.wizard_preview_html,
+        name="wizard_preview_html",
+    ),
+    path(
+        "wizard/<int:quote_pk>/preview/pdf/",
+        wizard_views.wizard_preview_pdf,
+        name="wizard_preview_pdf",
+    ),
+    path(
+        "wizard/<int:quote_pk>/process-schema/",
+        wizard_views.wizard_process_schema,
+        name="wizard_process_schema",
+    ),
+    path(
+        "wizard/<int:quote_pk>/process-autofill/",
+        wizard_views.wizard_process_autofill,
+        name="wizard_process_autofill",
+    ),
+    path(
+        "wizard/<int:quote_pk>/process-instance/<int:qp_pk>/",
+        wizard_views.wizard_process_instance,
+        name="wizard_process_instance",
+    ),
+    path(
+        "wizard/<int:quote_pk>/<slug:step_id>/",
+        wizard_views.wizard_step,
+        name="wizard_step",
+    ),
+    path("clients/suggest/", wizard_views.client_suggest, name="client_suggest"),
     path("clients/", views.client_list, name="client_list"),
     path("clients/new/", views.client_create, name="client_create"),
     path("clients/<int:pk>/", views.client_detail, name="client_detail"),

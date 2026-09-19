@@ -1,0 +1,68 @@
+{% extends "quotes/wizard/base_wizard.html" %}
+{% block wizard_body %}
+<div class="mq-wizard-panel">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <h2 class="mq-wizard-panel-title mb-0">Quote preview</h2>
+    <span class="small text-muted">Same layout as the downloadable PDF</span>
+  </div>
+
+  <div class="mq-pdf-preview-tabs" role="tablist">
+    <button type="button" class="btn btn-sm btn-outline-secondary active" data-mq-preview-tab="pdf">PDF</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-mq-preview-tab="html">Print layout</button>
+  </div>
+
+  <div id="mq-preview-pdf-wrap">
+    <object
+      class="mq-pdf-preview-frame"
+      data="{{ preview_pdf_url }}"
+      type="application/pdf"
+      aria-label="PDF preview of quote {{ quote.number }}">
+      <iframe
+        class="mq-pdf-preview-frame"
+        src="{{ preview_pdf_url }}"
+        title="PDF preview"></iframe>
+    </object>
+  </div>
+  <div id="mq-preview-html-wrap" class="d-none">
+    <iframe
+      class="mq-pdf-preview-frame"
+      src="{{ preview_html_url }}"
+      title="Print layout preview"></iframe>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mq-wizard-actions">
+      <button class="btn btn-outline-secondary" type="submit" name="wizard_action" value="back">Back</button>
+      <div class="mq-wizard-actions-right">
+        {% if quote.is_editable %}
+        <button class="btn btn-outline-dark" type="submit" name="wizard_action" value="calculate">Recalculate</button>
+        {% endif %}
+        <button class="btn btn-success" type="submit" name="wizard_action" value="download">Download PDF</button>
+        <button class="btn mq-btn-theme" type="submit" name="wizard_action" value="finish">Finish</button>
+      </div>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  var tabs = document.querySelectorAll("[data-mq-preview-tab]");
+  var pdfWrap = document.getElementById("mq-preview-pdf-wrap");
+  var htmlWrap = document.getElementById("mq-preview-html-wrap");
+  tabs.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      tabs.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      var mode = btn.getAttribute("data-mq-preview-tab");
+      if (mode === "html") {
+        pdfWrap.classList.add("d-none");
+        htmlWrap.classList.remove("d-none");
+      } else {
+        htmlWrap.classList.add("d-none");
+        pdfWrap.classList.remove("d-none");
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

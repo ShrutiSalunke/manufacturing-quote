@@ -264,9 +264,60 @@
   color: #374151;
 }
 
-.mq-status-pill.is-issued {
-  background: #eef2ff;
-  color: #3730a3;
+.mq-quote-detail-sub {
+  color: #6b7280;
+  font-size: 0.925rem;
+  margin: -0.5rem 0 1.25rem;
+}
+
+.mq-quote-process-item {
+  border: 1px solid var(--mq-master-border);
+  border-radius: var(--mq-control-radius);
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.75rem;
+  background: #fafafa;
+}
+
+.mq-quote-process-item:last-child {
+  margin-bottom: 0;
+}
+
+.mq-quote-process-name {
+  color: var(--mq-master-text);
+  font-size: 0.95rem;
+}
+
+.mq-quote-field-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.mq-quote-field-chip {
+  display: inline-flex;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.35rem;
+  background: #fff;
+  border: 1px solid var(--mq-master-border);
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.mq-quote-sub-list {
+  margin: 0.65rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--mq-master-text);
+}
+
+.mq-master-page .mq-master-card.mb-3 {
+  margin-bottom: 1rem !important;
+}
+
+.mq-master-topbar .mq-master-controls form {
+  display: inline-flex;
+  margin: 0;
 }
 
 .mq-actions-col {

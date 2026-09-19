@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ page_title|default:"New Quote" }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+<link href="{% static 'css/quote-wizard.css' %}" rel="stylesheet">
+{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'quotes:quote_list' %}">Quotes</a>
+{% if quote %} / <a href="{% url 'quotes:quote_detail' quote.pk %}">{{ quote.number }}</a>{% endif %}
+ / Wizard
+{% endblock %}
+{% block content %}
+<div class="mq-wizard-page mq-master-page">
+  <h1 class="mq-master-title">{{ page_title|default:"New Quote" }}</h1>
+  {% if quote %}
+  <p class="mq-wizard-sub">
+    {{ quote.customer|default:"No client" }} · {{ quote.plant }} · {{ quote.status }}
+  </p>
+  {% endif %}
+
+  <ol class="mq-wizard-steps" aria-label="Quote wizard progress">
+    {% for s in wizard_steps %}
+    <li class="mq-wizard-step is-{{ s.status }}">
+      <span class="mq-wizard-step-num">{{ s.index }}</span>
+      <span class="mq-wizard-step-label">{{ s.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+
+  {% block wizard_body %}{% endblock %}
+</div>
+{% endblock %}
