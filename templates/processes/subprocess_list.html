@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Sub Processes{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <h1 class="mq-master-title">Sub Processes</h1>
+
+    <form
+      id="subprocess-filter-form"
+      class="mq-master-controls"
+      method="get"
+      hx-get="{% url 'processes:subprocess_list' %}"
+      hx-target="#subprocess-table-panel"
+      hx-swap="outerHTML swap:0.15s"
+      hx-push-url="true"
+      hx-trigger="submit, change delay:50ms from:select, keyup changed delay:300ms from:input[type='search']"
+    >
+      <input type="hidden" name="page" value="1">
+      <input type="hidden" name="per_page" id="filter-per-page" value="{{ per_page }}">
+
+      <div class="mq-master-search">
+        <span class="mq-search-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M20 20l-3.5-3.5"></path>
+          </svg>
+        </span>
+        <input type="search" name="q" value="{{ q }}" placeholder="Search here" autocomplete="off" aria-label="Search sub processes">
+      </div>
+
+      <div class="mq-master-filter">
+        <span class="mq-filter-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="7" y1="12" x2="17" y2="12"></line>
+            <line x1="10" y1="17" x2="14" y2="17"></line>
+            <circle cx="9" cy="7" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="12" cy="17" r="1.5" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </span>
+        <select class="form-select" name="active" aria-label="Status filter">
+          <option value="" {% if active == "" %}selected{% endif %}>All statuses</option>
+          <option value="1" {% if active == "1" %}selected{% endif %}>Active only</option>
+          <option value="0" {% if active == "0" %}selected{% endif %}>Inactive only</option>
+        </select>
+      </div>
+
+      {% if user.is_app_admin %}
+      <a class="btn mq-btn-theme mq-master-add" href="{% url 'processes:subprocess_create' %}">Add Sub Process</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% include "processes/partials/subprocess_table_panel.html" %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+<script>
+  document.body.addEventListener("htmx:configRequest", function (event) {
+    event.detail.headers["X-CSRFToken"] = window.MQ && window.MQ.csrfToken;
+  });
+  document.body.addEventListener("htmx:afterSwap", function (event) {
+    if (event.detail.target && event.detail.target.id === "subprocess-table-panel") {
+      var sel = document.getElementById("per_page");
+      var hidden = document.getElementById("filter-per-page");
+      if (sel && hidden) hidden.value = sel.value;
+    }
+  });
+</script>
+{% endblock %}

@@ -218,9 +218,10 @@ def cost_template(template, parameter_values: dict, line_qty: float = 1.0) -> di
 
 
 def calculate_quote(quote, *, request=None, user=None):
-    """Calculate all lines, persist snapshot, set status CALCULATED. Raises FormulaError."""
+    """Calculate template lines (legacy) + process rollups. Raises FormulaError."""
     from django.db import transaction
 
+    from apps.processes.services import calculate_quote_processes
     from apps.quotes.models import Quote, QuoteCalculationSnapshot
 
     lines_data = []
@@ -231,6 +232,9 @@ def calculate_quote(quote, *, request=None, user=None):
         "other": 0.0,
         "total_cost": 0.0,
         "selling_price": 0.0,
+        "process_money": 0.0,
+        "process_time": 0.0,
+        "combined_selling": 0.0,
     }
 
     try:
@@ -244,7 +248,6 @@ def calculate_quote(quote, *, request=None, user=None):
                 "template__cost_elements",
             ):
                 params = {pv.parameter_code: pv.value for pv in line.parameter_values.all()}
-                # fill defaults
                 for p in line.template.parameters.all():
                     if p.code not in params and p.default_value != "":
                         params[p.code] = p.default_value
@@ -265,7 +268,18 @@ def calculate_quote(quote, *, request=None, user=None):
                 for k in ("material", "machine", "labor", "other", "total_cost", "selling_price"):
                     quote_totals[k] += t.get(k, 0)
 
-            data = {"lines": lines_data, "totals": {k: round(v, 4) for k, v in quote_totals.items()}}
+            process_data = calculate_quote_processes(quote)
+            quote_totals["process_money"] = process_data["totals"]["process_money"]
+            quote_totals["process_time"] = process_data["totals"]["process_time"]
+            quote_totals["combined_selling"] = round(
+                quote_totals["selling_price"] + quote_totals["process_money"], 4
+            )
+
+            data = {
+                "lines": lines_data,
+                "processes": process_data["processes"],
+                "totals": {k: round(v, 4) for k, v in quote_totals.items()},
+            }
             QuoteCalculationSnapshot.objects.update_or_create(quote=quote, defaults={"data": data})
             quote.status = Quote.Status.CALCULATED
             quote.save(update_fields=["status", "updated_at"])

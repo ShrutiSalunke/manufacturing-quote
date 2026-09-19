@@ -32,6 +32,67 @@ def _safe_names(names: dict) -> dict:
     return {k: float(v) if isinstance(v, (int, float)) else v for k, v in names.items()}
 
 
+def formula_referenced_names(expression: str) -> set[str]:
+    """
+    Return identifier names used in an expression (excluding safe function names).
+    Raises FormulaError on invalid syntax / disallowed constructs.
+    """
+    if expression is None or str(expression).strip() == "":
+        return set()
+    expr = str(expression).strip()
+    try:
+        tree = ast.parse(expr, mode="eval")
+    except SyntaxError as exc:
+        raise FormulaError(f"Invalid expression syntax: {exc}") from exc
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Attribute, ast.Subscript, ast.Lambda, ast.ListComp)):
+            raise FormulaError("Unsupported construct in formulas")
+        if isinstance(node, ast.Call):
+            if not isinstance(node.func, ast.Name) or node.func.id not in SAFE_FUNCTIONS:
+                raise FormulaError(
+                    f"Function not allowed: {getattr(node.func, 'id', ast.dump(node.func))}"
+                )
+        if isinstance(node, ast.Name) and node.id not in SAFE_FUNCTIONS:
+            names.add(node.id)
+    return names
+
+
+def validate_formula_against_fields(expression: str, allowed_field_codes) -> None:
+    """
+    Ensure expression only references allowed field codes (+ constants / safe functions).
+    Raises FormulaError if unknown names are used (including MAT_*).
+    """
+    allowed = {(c or "").upper() for c in (allowed_field_codes or []) if c}
+    names = formula_referenced_names(expression or "0")
+
+    # Field codes must be written exactly as defined (uppercase A-Z / digits / _)
+    wrong_case = sorted(n for n in names if n.upper() in allowed and n != n.upper())
+    if wrong_case:
+        raise FormulaError(
+            "Field codes must be uppercase exactly as defined "
+            f"(use {', '.join(n.upper() for n in wrong_case)}, not {', '.join(wrong_case)})."
+        )
+
+    unknown = sorted({n.upper() for n in names} - allowed)
+    if unknown:
+        mat = [n for n in unknown if n.startswith("MAT_")]
+        other = [n for n in unknown if not n.startswith("MAT_")]
+        parts = []
+        if mat:
+            parts.append(
+                "Material values cannot be used directly in the formula "
+                f"({', '.join(mat)}). Add a field and set Auto-fill from material instead."
+            )
+        if other:
+            parts.append(
+                "Unknown field code(s): "
+                + ", ".join(other)
+                + ". Use only fields defined above (and numbers)."
+            )
+        raise FormulaError(" ".join(parts))
+
+
 def evaluate_expression(expression: str, names: dict):
     if expression is None or str(expression).strip() == "":
         raise FormulaError("Empty expression")

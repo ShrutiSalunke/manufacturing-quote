@@ -10,22 +10,31 @@ from apps.templates_engine.models import ProductTemplate
 
 
 class Customer(models.Model):
+    """Client master (UI label: Clients). Reused across quotes."""
+
+    code = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=200)
     email = models.EmailField(blank=True, default="")
+    phone = models.CharField(max_length=30, blank=True, default="")
     company = models.CharField(max_length=200, blank=True, default="")
+    gstin = models.CharField(max_length=20, blank=True, default="")
     address_line1 = models.CharField(max_length=255, blank=True, default="")
     address_line2 = models.CharField(max_length=255, blank=True, default="")
     city = models.CharField(max_length=100, blank=True, default="")
     state = models.CharField(max_length=100, blank=True, default="")
     postal_code = models.CharField(max_length=30, blank=True, default="")
     country = models.CharField(max_length=100, blank=True, default="India")
+    notes = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["-created_at", "-id"]
 
     def __str__(self):
-        return self.company or self.name
+        label = self.company or self.name
+        return f"{self.code} — {label}" if self.code else label
 
 
 class Quote(models.Model):
@@ -38,7 +47,13 @@ class Quote(models.Model):
     version = models.PositiveIntegerField(default=1)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     plant = models.ForeignKey(Plant, on_delete=models.PROTECT, related_name="quotes")
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="quotes")
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="quotes",
+    )
     currency = models.CharField(max_length=10, default="INR")
     valid_until = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, default="")

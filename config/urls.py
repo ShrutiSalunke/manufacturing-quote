@@ -9,7 +9,8 @@ urlpatterns = [
     path("accounts/", include("apps.accounts.urls")),
     path("", include("apps.core.urls")),
     path("catalog/", include("apps.catalog.urls")),
-    path("templates/", include("apps.templates_engine.urls")),
+    path("templates/", include("apps.templates_engine.urls")),  # legacy; not linked in UI
+    path("processes/", include("apps.processes.urls")),
     path("quotes/", include("apps.quotes.urls")),
     path("imports/", include("apps.imports_excel.urls")),
     path("error-logs/", include("apps.auditlog.urls")),

@@ -29,11 +29,34 @@ def generate_quote_pdf(quote, *, request=None, user=None) -> QuoteDocument:
                     "amount": amount,
                 }
             )
+        # Process-based quote rows (primary path)
+        for qp in quote.quote_processes.select_related("process").prefetch_related("subprocesses__subprocess"):
+            amount = float(qp.computed_total or 0)
+            desc = f"{qp.process.code} — {qp.process.name}"
+            if qp.subprocesses.exists():
+                subs = ", ".join(qs.subprocess.code for qs in qp.subprocesses.all())
+                desc = f"{desc} (incl. {subs})"
+            lines.append(
+                {
+                    "description": desc,
+                    "quantity": 1,
+                    "unit_price": amount,
+                    "amount": amount,
+                }
+            )
+        totals = data.get("totals", {})
+        if totals.get("combined_selling") is not None:
+            display_totals = {
+                **totals,
+                "selling_price": totals.get("combined_selling", totals.get("selling_price", 0)),
+            }
+        else:
+            display_totals = totals
         context = {
             "quote": quote,
             "company_name": getattr(settings, "COMPANY_NAME", "Manufacturing"),
             "lines": lines,
-            "totals": data.get("totals", {}),
+            "totals": display_totals,
             "customer": quote.customer,
             "plant": quote.plant,
         }

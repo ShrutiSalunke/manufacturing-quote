@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Process fields — {{ quote.number }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">{{ qp.process.code }} — field values</h1>
+<p class="text-muted">Quote {{ quote.number }}{% if qp.material %} · Material {{ qp.material.code }}{% endif %}</p>
+<p class="small">Formula: <code>{{ qp.process.result_formula }}</code> → {{ qp.process.result_unit }}</p>
+{% if qp.computed_own is not None %}
+<p class="small"><strong>Current own value:</strong> {{ qp.computed_own }} · <strong>Total (with sub processes):</strong> {{ qp.computed_total }}</p>
+{% endif %}
+<form method="post" class="bg-white border rounded p-3" style="max-width:560px">
+  {% csrf_token %}
+  {% for field in form %}
+  <div class="mb-3">
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+    {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  </div>
+  {% endfor %}
+  <div class="d-flex gap-2 justify-content-end">
+    <a class="btn btn-outline-secondary" href="{% url 'quotes:quote_detail' quote.pk %}">Cancel</a>
+    <button class="btn mq-btn-theme" type="submit">Save &amp; calculate</button>
+  </div>
+</form>
+{% endblock %}

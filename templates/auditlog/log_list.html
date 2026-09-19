@@ -7,13 +7,21 @@
     <h1 class="h3 mb-1">Error Logs</h1>
     <p class="text-muted mb-0">System of record is the <code>SystemLog</code> database table — not a log file. Search by correlation id from flash messages.</p>
   </div>
-  <form method="post" action="{% url 'auditlog:log_purge' %}" class="d-flex gap-2 align-items-end" onsubmit="return confirm('Delete old logs?');">
+  <form method="post" action="{% url 'auditlog:log_purge' %}" class="d-flex gap-2 align-items-end">
     {% csrf_token %}
     <div>
       <label class="form-label small mb-0">Delete older than (days)</label>
       <input type="number" name="days" value="30" min="1" class="form-control form-control-sm" style="width:100px">
     </div>
-    <button class="btn btn-outline-danger btn-sm" type="submit">Purge</button>
+    <button
+      class="btn btn-outline-danger btn-sm"
+      type="submit"
+      data-mq-confirm-submit
+      data-mq-title="Purge old logs?"
+      data-mq-message="This permanently deletes error log rows older than the selected number of days."
+      data-mq-confirm-label="Purge"
+      data-mq-variant="danger"
+    >Purge</button>
   </form>
 </div>
 

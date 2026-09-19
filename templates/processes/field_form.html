@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ title }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <h1 class="mq-master-title">{{ title }}</h1>
+  </div>
+
+  <form method="post" class="mq-form-card mq-master-card" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="mq-form-banner mq-form-banner-error">
+      {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Field definition</h2>
+      <div class="mq-form-grid">
+        {% for field in form %}
+        <div class="mq-field {% if field.name == 'help_text' or field.name == 'material_property_key' %}mq-field-span-2{% endif %} {% if field.field.widget.input_type == 'checkbox' %}mq-field-check{% endif %}">
+          {% if field.field.widget.input_type == 'checkbox' %}
+          <label class="mq-check-label" for="{{ field.id_for_label }}">
+            {{ field }}
+            <span>{{ field.label }}</span>
+          </label>
+          {% else %}
+          <label class="mq-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% endif %}
+          {% if field.help_text %}<div class="mq-help">{{ field.help_text }}</div>{% endif %}
+          {% for e in field.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="mq-form-actions">
+      <a class="btn btn-outline-secondary" href="{{ back_url }}">Cancel</a>
+      <button class="btn mq-btn-theme" type="submit">Save</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

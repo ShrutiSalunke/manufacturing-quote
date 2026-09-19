@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ subprocess.code }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <div class="mq-detail-heading">
+      <h1 class="mq-master-title">{{ subprocess.code }} — {{ subprocess.name }}</h1>
+      {% if subprocess.is_active %}
+        <span class="mq-status-pill is-active">Active</span>
+      {% else %}
+        <span class="mq-status-pill is-inactive">Inactive</span>
+      {% endif %}
+    </div>
+    {% if user.is_app_admin %}
+    <div class="mq-master-controls">
+      <a class="btn btn-outline-primary mq-master-add" href="{% url 'processes:subprocess_edit' subprocess.pk %}">Edit</a>
+      {% if subprocess.is_active %}
+      <form method="post" action="{% url 'processes:subprocess_soft_delete' subprocess.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-secondary mq-master-add" type="submit"
+          data-mq-confirm-submit data-mq-title="Deactivate sub process?" data-mq-message="{{ subprocess.code }} will be set to Inactive." data-mq-confirm-label="Deactivate" data-mq-variant="warning">Deactivate</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'processes:subprocess_restore' subprocess.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-success mq-master-add" type="submit">Restore</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'processes:subprocess_delete' subprocess.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger mq-master-add" type="submit"
+          data-mq-confirm-submit data-mq-title="Permanently delete sub process?" data-mq-message="{{ subprocess.code }} will be removed forever." data-mq-confirm-label="Delete permanently" data-mq-variant="danger">Delete permanently</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="mq-master-card mq-detail-card">
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Identity</h2>
+      <div class="mq-detail-grid">
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Code</div>
+          <div class="mq-detail-value">{{ subprocess.code }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Name</div>
+          <div class="mq-detail-value">{{ subprocess.name }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Plant</div>
+          <div class="mq-detail-value">{{ subprocess.plant }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Result unit</div>
+          <div class="mq-detail-value">{{ subprocess.result_unit }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Material properties</div>
+          <div class="mq-detail-value">{% if subprocess.use_material_properties %}Enabled{% else %}Off{% endif %}</div>
+        </div>
+        <div class="mq-detail-item mq-field-span-2">
+          <div class="mq-detail-label">Description</div>
+          <div class="mq-detail-value">{{ subprocess.description|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Result formula</h2>
+      <pre class="mq-detail-notes mb-0" style="white-space:pre-wrap;font-family:ui-monospace,monospace">{{ subprocess.result_formula }}</pre>
+    </div>
+
+    <div class="mq-form-section">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mq-form-section-title mb-0">Fields</h2>
+        {% if user.is_app_admin %}
+        <a class="btn btn-sm mq-btn-theme" href="{% url 'processes:subprocess_field_add' subprocess.pk %}">Add field</a>
+        {% endif %}
+      </div>
+      {% if subprocess.fields.all %}
+      <div class="table-responsive">
+        <table class="mq-master-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Label</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th class="mq-actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for f in subprocess.fields.all %}
+            <tr>
+              <td data-label="Code"><code>{{ f.code }}</code></td>
+              <td data-label="Label">{{ f.label }}{% if f.unit %} <span class="text-muted">({{ f.unit }})</span>{% endif %}</td>
+              <td data-label="Type">{{ f.data_type }}</td>
+              <td data-label="Required">{% if f.is_required %}Yes{% else %}No{% endif %}</td>
+              <td data-label="Actions" class="mq-actions-col">
+                {% if user.is_app_admin %}
+                <div class="mq-master-actions">
+                  <a class="mq-icon-btn mq-icon-btn-edit" href="{% url 'processes:subprocess_field_edit' subprocess.pk f.pk %}" title="Edit field">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  </a>
+                  <form method="post" action="{% url 'processes:subprocess_field_delete' subprocess.pk f.pk %}">{% csrf_token %}
+                    <button class="mq-icon-btn mq-icon-btn-delete" type="submit" title="Delete field"
+                      data-mq-confirm-submit data-mq-title="Delete field?" data-mq-message="Remove {{ f.code }}?" data-mq-confirm-label="Delete" data-mq-variant="danger">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                  </form>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted small mb-0">No fields yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="mq-form-section mq-form-section-last">
+      <h2 class="mq-form-section-title">Used by processes</h2>
+      {% if subprocess.processes.all %}
+      <ul class="mb-0 small">
+        {% for p in subprocess.processes.all %}
+        <li><a href="{% url 'processes:process_detail' p.pk %}">{{ p.code }}</a> — {{ p.name }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted small mb-0">Not linked to any process yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

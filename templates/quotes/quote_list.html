@@ -8,12 +8,12 @@
 </div>
 {% if quotes %}
 <table class="table table-hover bg-white">
-  <thead><tr><th>Number</th><th>Customer</th><th>Plant</th><th>Status</th><th>Created</th></tr></thead>
+  <thead><tr><th>Number</th><th>Client</th><th>Plant</th><th>Status</th><th>Created</th></tr></thead>
   <tbody>
   {% for q in quotes %}
   <tr>
     <td><a href="{% url 'quotes:quote_detail' q.pk %}">{{ q.number }}</a></td>
-    <td>{{ q.customer }}</td>
+    <td>{{ q.customer|default:"—" }}</td>
     <td>{{ q.plant.code }}</td>
     <td>{{ q.status }}</td>
     <td>{{ q.created_at }}</td>

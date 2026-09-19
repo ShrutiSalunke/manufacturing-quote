@@ -16,33 +16,59 @@ class BootstrapFormMixin:
             elif isinstance(w, (forms.Select, forms.SelectMultiple)):
                 w.attrs.setdefault("class", "form-select")
             else:
-                w.attrs.setdefault("class", "form-control")
+                w.attrs.setdefault("class", "form-control mq-input")
 
 
 class CustomerForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Customer
         fields = [
+            "code",
+            "company",
             "name",
             "email",
-            "company",
+            "phone",
+            "gstin",
             "address_line1",
             "address_line2",
             "city",
             "state",
             "postal_code",
             "country",
+            "notes",
+            "is_active",
         ]
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+        labels = {
+            "name": "Contact name",
+            "company": "Company name",
+            "code": "Client code",
+            "gstin": "GSTIN",
+        }
+        help_texts = {
+            "code": "Stable unique key (e.g. CLI-ACME). Prefer not to change after quotes exist.",
+            "notes": "Internal notes — not shown on customer PDF.",
+        }
 
 
 class QuoteForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Quote
-        fields = ["plant", "valid_until", "notes"]
+        fields = ["customer", "plant", "valid_until", "notes"]
+        labels = {
+            "customer": "Client",
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["plant"].queryset = Plant.objects.filter(is_active=True)
+        self.fields["customer"].queryset = Customer.objects.filter(is_active=True).order_by(
+            "code"
+        )
+        self.fields["customer"].required = True
+        self.fields["customer"].empty_label = "Select a client…"
 
 
 class QuoteLineForm(BootstrapFormMixin, forms.ModelForm):

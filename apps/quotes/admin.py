@@ -17,8 +17,9 @@ class QuoteLineInline(admin.TabularInline):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ("name", "company", "email")
-    search_fields = ("name", "company", "email")
+    list_display = ("code", "company", "name", "email", "phone", "gstin", "is_active")
+    list_filter = ("is_active", "country")
+    search_fields = ("code", "name", "company", "email", "gstin", "phone")
 
 
 @admin.register(Quote)

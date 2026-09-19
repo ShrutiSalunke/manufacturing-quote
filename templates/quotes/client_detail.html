@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ client.code }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <div class="mq-detail-heading">
+      <h1 class="mq-master-title">{{ client.code }}{% if client.company %} — {{ client.company }}{% endif %}</h1>
+      {% if client.is_active %}
+        <span class="mq-status-pill is-active">Active</span>
+      {% else %}
+        <span class="mq-status-pill is-inactive">Inactive</span>
+      {% endif %}
+    </div>
+    {% if user.is_app_admin %}
+    <div class="mq-master-controls">
+      <a class="btn btn-outline-primary mq-master-add" href="{% url 'quotes:client_edit' client.pk %}">Edit</a>
+      {% if client.is_active %}
+      <form method="post" action="{% url 'quotes:client_soft_delete' client.pk %}">
+        {% csrf_token %}
+        <button
+          class="btn btn-outline-secondary mq-master-add"
+          type="submit"
+          data-mq-confirm-submit
+          data-mq-title="Soft delete client?"
+          data-mq-message="{{ client.code }} will be set to Inactive. Existing quotes keep this client."
+          data-mq-confirm-label="Soft delete"
+          data-mq-variant="warning"
+        >Soft delete</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'quotes:client_restore' client.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-success mq-master-add" type="submit">Restore</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'quotes:client_permanent_delete' client.pk %}">
+        {% csrf_token %}
+        <button
+          class="btn btn-outline-danger mq-master-add"
+          type="submit"
+          data-mq-confirm-submit
+          data-mq-title="Permanently delete client?"
+          data-mq-message="{{ client.code }} will be removed forever. Quotes that used this client keep their data, but the client link becomes empty."
+          data-mq-confirm-label="Delete permanently"
+          data-mq-variant="danger"
+        >Delete permanently</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="mq-master-card mq-detail-card">
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Identity</h2>
+      <div class="mq-detail-grid">
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Client code</div>
+          <div class="mq-detail-value">{{ client.code }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Company name</div>
+          <div class="mq-detail-value">{{ client.company|default:"—" }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Contact name</div>
+          <div class="mq-detail-value">{{ client.name }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">GSTIN</div>
+          <div class="mq-detail-value">{{ client.gstin|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Contact</h2>
+      <div class="mq-detail-grid">
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Email</div>
+          <div class="mq-detail-value">{{ client.email|default:"—" }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Phone</div>
+          <div class="mq-detail-value">{{ client.phone|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Address</h2>
+      <div class="mq-detail-grid">
+        <div class="mq-detail-item mq-field-span-2">
+          <div class="mq-detail-label">Address</div>
+          <div class="mq-detail-value">
+            {{ client.address_line1|default:"—" }}{% if client.address_line2 %}<br>{{ client.address_line2 }}{% endif %}
+          </div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">City</div>
+          <div class="mq-detail-value">{{ client.city|default:"—" }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">State</div>
+          <div class="mq-detail-value">{{ client.state|default:"—" }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Postal code</div>
+          <div class="mq-detail-value">{{ client.postal_code|default:"—" }}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Country</div>
+          <div class="mq-detail-value">{{ client.country|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+
+    {% if client.notes %}
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Internal notes</h2>
+      <p class="mq-detail-notes">{{ client.notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="mq-form-section mq-form-section-last">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mq-form-section-title mb-0">Recent quotes</h2>
+      </div>
+      {% if quotes %}
+      <div class="table-responsive">
+        <table class="mq-master-table">
+          <thead>
+            <tr>
+              <th>Number</th>
+              <th>Plant</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for q in quotes %}
+            <tr>
+              <td data-label="Number"><a href="{% url 'quotes:quote_detail' q.pk %}">{{ q.number }}</a></td>
+              <td data-label="Plant">{{ q.plant.code }}</td>
+              <td data-label="Status">{{ q.status }}</td>
+              <td data-label="Created">{{ q.created_at|date:"Y-m-d" }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted small mb-0">No quotes for this client yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

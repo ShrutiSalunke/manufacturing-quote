@@ -51,13 +51,13 @@
 
     steps.push(
       {
-        id: "templates",
-        text: "Define formulas, BOM, and machine time on Product Templates.",
-        attachTo: { element: '[data-tour="nav-templates"]', on: "right" },
+        id: "processes",
+        text: "Define Processes and Sub Processes with custom fields and formulas for automation quoting.",
+        attachTo: { element: '[data-tour="nav-processes"]', on: "right" },
       },
       {
         id: "quotes",
-        text: "Create a quote, calculate costs, and download the customer PDF.",
+        text: "Create a quote, add processes, calculate totals, and download the customer PDF.",
         attachTo: { element: '[data-tour="nav-quotes"]', on: "right" },
       }
     );

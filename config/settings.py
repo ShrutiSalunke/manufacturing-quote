@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.core",
     "apps.catalog",
-    "apps.templates_engine",
+    "apps.templates_engine",  # kept for legacy quotes; UI hidden
+    "apps.processes",
     "apps.costing",
     "apps.quotes",
     "apps.imports_excel",

@@ -24,11 +24,16 @@
 
   <div>
     <strong>Bill To</strong><br>
+    {% if customer %}
     {{ customer.name }}{% if customer.company %} / {{ customer.company }}{% endif %}<br>
     {{ customer.address_line1 }} {{ customer.address_line2 }}<br>
     {{ customer.city }} {{ customer.state }} {{ customer.postal_code }}<br>
     {{ customer.country }}<br>
-    {{ customer.email }}
+    {% if customer.gstin %}GSTIN: {{ customer.gstin }}<br>{% endif %}
+    {{ customer.email }}{% if customer.phone %} · {{ customer.phone }}{% endif %}
+    {% else %}
+    <span class="muted">Client not available</span>
+    {% endif %}
   </div>
 
   <table>

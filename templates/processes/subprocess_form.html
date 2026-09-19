@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ title }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <h1 class="mq-master-title">{{ title }}</h1>
+  </div>
+
+  <form method="post" id="subprocess-master-form" class="mq-form-card mq-master-card" novalidate>
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {% if form.non_field_errors or formset.non_form_errors %}
+    <div class="mq-form-banner mq-form-banner-error">
+      {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
+      {% for e in formset.non_form_errors %}<div>{{ e }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Identity</h2>
+      <div class="mq-form-grid">
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.code.id_for_label }}">{{ form.code.label }}</label>
+          {{ form.code }}
+          {% for e in form.code.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+          {{ form.name }}
+          {% for e in form.name.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field mq-field-span-2">
+          <label class="mq-label" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+          {{ form.description }}
+          {% for e in form.description.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-section">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2 class="mq-form-section-title mb-0">Fields</h2>
+          <p class="mq-help mb-0 mt-1">Add input fields used in the formula (codes like <code>SETUP_MIN</code>). Use uppercase letters, numbers, and underscores.</p>
+        </div>
+        <button type="button" class="btn btn-sm mq-btn-theme" id="mq-add-field-row">Add field</button>
+      </div>
+
+      <div id="mq-field-rows" class="mq-inline-fields">
+        {% for fform in formset %}
+        <div class="mq-inline-field-row {% if fform.instance.pk %}is-existing{% endif %}{% if fform.DELETE.value %}is-removed{% endif %}">
+          {% for hidden in fform.hidden_fields %}{{ hidden }}{% endfor %}
+          {% if fform.DELETE %}<div class="mq-delete-hidden">{{ fform.DELETE }}</div>{% endif %}
+          {% if fform.non_field_errors %}
+          <div class="mq-field-error mb-2">{% for e in fform.non_field_errors %}{{ e }}{% endfor %}</div>
+          {% endif %}
+          <div class="mq-inline-field-grid">
+            <div class="mq-field">
+              <label class="mq-label">Code</label>
+              {{ fform.code }}
+              {% for e in fform.code.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Label</label>
+              {{ fform.label }}
+              {% for e in fform.label.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Type</label>
+              {{ fform.data_type }}
+              {% for e in fform.data_type.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Unit</label>
+              {{ fform.unit }}
+              {% for e in fform.unit.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Default</label>
+              {{ fform.default_value }}
+              {% for e in fform.default_value.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Min</label>
+              {{ fform.min_value }}
+              {% for e in fform.min_value.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Max</label>
+              {{ fform.max_value }}
+              {% for e in fform.max_value.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Sort</label>
+              {{ fform.sort_order }}
+              {% for e in fform.sort_order.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">{{ fform.material_property_key.label }}</label>
+              {{ fform.material_property_key }}
+              {% if fform.material_property_key.help_text %}<div class="mq-help">{{ fform.material_property_key.help_text }}</div>{% endif %}
+              {% for e in fform.material_property_key.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field mq-inline-row-actions">
+              <label class="mq-check-label">{{ fform.is_required }} <span>Required</span></label>
+              <button type="button" class="btn btn-sm btn-outline-danger" data-mq-remove-field>Remove</button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <template id="mq-empty-field-row">
+        <div class="mq-inline-field-row">
+          {% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+          {% if formset.empty_form.DELETE %}<div class="mq-delete-hidden">{{ formset.empty_form.DELETE }}</div>{% endif %}
+          <div class="mq-inline-field-grid">
+            <div class="mq-field">
+              <label class="mq-label">Code</label>
+              {{ formset.empty_form.code }}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Label</label>
+              {{ formset.empty_form.label }}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Type</label>
+              {{ formset.empty_form.data_type }}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Unit</label>
+              {{ formset.empty_form.unit }}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Default</label>
+              {{ formset.empty_form.default_value }}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Min</label>
+              {{ formset.empty_form.min_value }}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Max</label>
+              {{ formset.empty_form.max_value }}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">Sort</label>
+              {{ formset.empty_form.sort_order }}
+            </div>
+            <div class="mq-field">
+              <label class="mq-label">{{ formset.empty_form.material_property_key.label }}</label>
+              {{ formset.empty_form.material_property_key }}
+              {% if formset.empty_form.material_property_key.help_text %}<div class="mq-help">{{ formset.empty_form.material_property_key.help_text }}</div>{% endif %}
+            </div>
+            <div class="mq-field mq-inline-row-actions">
+              <label class="mq-check-label">{{ formset.empty_form.is_required }} <span>Required</span></label>
+              <button type="button" class="btn btn-sm btn-outline-danger" data-mq-remove-field>Remove</button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Formula &amp; result</h2>
+      <div class="mq-form-grid">
+        <div class="mq-field mq-field-span-2">
+          <label class="mq-label" for="{{ form.result_formula.id_for_label }}">{{ form.result_formula.label }}</label>
+          {{ form.result_formula }}
+          {% if form.result_formula.help_text %}<div class="mq-help">{{ form.result_formula.help_text }}</div>{% endif %}
+          {% for e in form.result_formula.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.result_unit.id_for_label }}">{{ form.result_unit.label }}</label>
+          {{ form.result_unit }}
+          {% for e in form.result_unit.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field mq-field-check">
+          <label class="mq-check-label" for="{{ form.use_material_properties.id_for_label }}">
+            {{ form.use_material_properties }}
+            <span>{{ form.use_material_properties.label }}</span>
+          </label>
+          {% if form.use_material_properties.help_text %}<div class="mq-help">{{ form.use_material_properties.help_text }}</div>{% endif %}
+          {% for e in form.use_material_properties.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field mq-field-check">
+          <label class="mq-check-label" for="{{ form.is_active.id_for_label }}">
+            {{ form.is_active }}
+            <span>{{ form.is_active.label }}</span>
+          </label>
+          {% for e in form.is_active.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-actions">
+      <a class="btn btn-outline-secondary" href="{% if subprocess %}{% url 'processes:subprocess_detail' subprocess.pk %}{% else %}{% url 'processes:subprocess_list' %}{% endif %}">Cancel</a>
+      <button class="btn mq-btn-theme" type="submit">Save</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/mq-formula-autocomplete.js' %}"></script>
+<script>
+  (function () {
+    var totalInput = document.getElementById("id_fields-TOTAL_FORMS");
+    var container = document.getElementById("mq-field-rows");
+    var template = document.getElementById("mq-empty-field-row");
+    var addBtn = document.getElementById("mq-add-field-row");
+    var form = document.getElementById("subprocess-master-form");
+
+    if (totalInput && container && template && addBtn) {
+      addBtn.addEventListener("click", function () {
+        var index = parseInt(totalInput.value, 10) || 0;
+        var html = template.innerHTML.replace(/__prefix__/g, String(index));
+        var wrap = document.createElement("div");
+        wrap.innerHTML = html.trim();
+        container.appendChild(wrap.firstElementChild);
+        totalInput.value = index + 1;
+      });
+    }
+
+    if (container) {
+      container.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-mq-remove-field]");
+        if (!btn) return;
+        var row = btn.closest(".mq-inline-field-row");
+        if (!row) return;
+        var del = row.querySelector('.mq-delete-hidden input[type="checkbox"]');
+        if (del) {
+          del.checked = true;
+          row.classList.add("is-removed");
+        } else {
+          row.remove();
+        }
+      });
+    }
+
+    if (form && window.MQ && typeof MQ.initFormulaAutocomplete === "function") {
+      MQ.initFormulaAutocomplete({ form: form });
+    }
+
+    if (!window.MQ || !MQ.alert || !form) return;
+    var firstError = form.querySelector(".mq-field-error, .mq-form-banner-error");
+    if (firstError) {
+      MQ.alert({
+        title: "Please fix the form",
+        message: firstError.textContent.trim() || "Some fields need your attention before saving.",
+        variant: "warning",
+      });
+    }
+  })();
+</script>
+{% endblock %}

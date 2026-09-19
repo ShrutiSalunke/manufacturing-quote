@@ -1,0 +1,193 @@
+<div id="client-table-panel" class="mq-master-panel">
+  <div class="mq-master-card">
+    <div class="mq-master-card-head d-flex justify-content-between align-items-center">
+      <h2>Clients</h2>
+      <span class="small text-muted">{{ page_obj.paginator.count }} total</span>
+    </div>
+
+    {% if clients %}
+    <div class="table-responsive">
+      <table class="mq-master-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Company</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>GSTIN</th>
+            <th>Status</th>
+            <th class="mq-actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for c in clients %}
+          <tr>
+            <td data-label="Code">{{ c.code }}</td>
+            <td data-label="Company">{{ c.company|default:"—" }}</td>
+            <td data-label="Contact">{{ c.name }}</td>
+            <td data-label="Email">{{ c.email|default:"—" }}</td>
+            <td data-label="Phone">{{ c.phone|default:"—" }}</td>
+            <td data-label="GSTIN">{{ c.gstin|default:"—" }}</td>
+            <td data-label="Status">
+              {% if c.is_active %}
+                <span class="mq-status-pill is-active">Active</span>
+              {% else %}
+                <span class="mq-status-pill is-inactive">Inactive</span>
+              {% endif %}
+            </td>
+            <td data-label="Actions" class="mq-actions-col">
+              <div class="mq-master-actions">
+                <a class="mq-icon-btn mq-icon-btn-view" href="{% url 'quotes:client_detail' c.pk %}" title="View details" aria-label="View {{ c.code }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </a>
+                {% if user.is_app_admin %}
+                <a class="mq-icon-btn mq-icon-btn-edit" href="{% url 'quotes:client_edit' c.pk %}" title="Edit" aria-label="Edit {{ c.code }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                </a>
+                {% if c.is_active %}
+                <form method="post" action="{% url 'quotes:client_soft_delete' c.pk %}">{% csrf_token %}
+                  <button
+                    class="mq-icon-btn mq-icon-btn-deactivate"
+                    type="submit"
+                    title="Soft delete (set Inactive)"
+                    aria-label="Soft delete {{ c.code }}"
+                    data-mq-confirm-submit
+                    data-mq-title="Soft delete client?"
+                    data-mq-message="{{ c.code }} will be set to Inactive. Existing quotes keep this client."
+                    data-mq-confirm-label="Soft delete"
+                    data-mq-variant="warning"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9"></circle>
+                      <path d="M9 12h6"></path>
+                    </svg>
+                  </button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'quotes:client_restore' c.pk %}">{% csrf_token %}
+                  <button class="mq-icon-btn mq-icon-btn-activate" type="submit" title="Restore (set Active)" aria-label="Restore {{ c.code }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <polyline points="1 4 1 10 7 10"></polyline>
+                      <path d="M3.5 15a9 9 0 1 0 2.1-8.7L1 10"></path>
+                    </svg>
+                  </button>
+                </form>
+                {% endif %}
+                <form method="post" action="{% url 'quotes:client_permanent_delete' c.pk %}">{% csrf_token %}
+                  <button
+                    class="mq-icon-btn mq-icon-btn-delete"
+                    type="submit"
+                    title="Permanently delete"
+                    aria-label="Permanently delete {{ c.code }}"
+                    data-mq-confirm-submit
+                    data-mq-title="Permanently delete client?"
+                    data-mq-message="{{ c.code }} will be removed forever. Quotes that used this client will keep their data, but the client link will become empty."
+                    data-mq-confirm-label="Delete permanently"
+                    data-mq-variant="danger"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                      <path d="M10 11v6"></path>
+                      <path d="M14 11v6"></path>
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                    </svg>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mq-master-footer">
+      <div class="mq-footer-left">
+        <label class="small text-muted mb-0" for="per_page">Rows per page</label>
+        <select
+          id="per_page"
+          class="form-select form-select-sm"
+          name="per_page"
+          hx-get="{% url 'quotes:client_list' %}"
+          hx-target="#client-table-panel"
+          hx-swap="outerHTML swap:0.15s"
+          hx-include="#client-filter-form input[name='q'], #client-filter-form select[name='active']"
+          hx-vals='{"page": "1"}'
+          hx-push-url="true"
+        >
+          {% for n in per_page_choices %}
+          <option value="{{ n }}" {% if per_page == n %}selected{% endif %}>{{ n }}</option>
+          {% endfor %}
+        </select>
+        <span class="mq-range">
+          {% if page_obj.paginator.count %}
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+          {% else %}
+            Showing 0 of 0
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="mq-footer-right mq-pager">
+        {% if page_obj.has_previous %}
+          <a
+            href="?page={{ page_obj.previous_page_number }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}"
+            hx-get="{% url 'quotes:client_list' %}?page={{ page_obj.previous_page_number }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}"
+            hx-target="#client-table-panel"
+            hx-swap="outerHTML swap:0.15s"
+            hx-push-url="true"
+            aria-label="Previous"
+          >‹</a>
+        {% else %}
+          <span class="mq-page is-disabled">‹</span>
+        {% endif %}
+
+        {% for num in page_numbers %}
+          {% if num is None %}
+            <span class="mq-ellipsis">…</span>
+          {% elif num == page_obj.number %}
+            <span class="mq-page is-current">{{ num }}</span>
+          {% else %}
+            <a
+              href="?page={{ num }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}"
+              hx-get="{% url 'quotes:client_list' %}?page={{ num }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}"
+              hx-target="#client-table-panel"
+              hx-swap="outerHTML swap:0.15s"
+              hx-push-url="true"
+            >{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <a
+            href="?page={{ page_obj.next_page_number }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}"
+            hx-get="{% url 'quotes:client_list' %}?page={{ page_obj.next_page_number }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}"
+            hx-target="#client-table-panel"
+            hx-swap="outerHTML swap:0.15s"
+            hx-push-url="true"
+            aria-label="Next"
+          >›</a>
+        {% else %}
+          <span class="mq-page is-disabled">›</span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state m-3">
+      <p class="mb-2">No clients found.</p>
+      {% if user.is_app_admin %}
+      <a class="btn btn-primary" href="{% url 'quotes:client_create' %}">Add first client</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>

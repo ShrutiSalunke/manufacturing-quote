@@ -5,13 +5,13 @@
 <div class="d-flex justify-content-between align-items-start mb-3">
   <div>
     <h1 class="h3 mb-1">{{ quote.number }} <span class="badge text-bg-secondary">{{ quote.status }}</span></h1>
-    <div class="text-muted">{{ quote.customer }} · {{ quote.plant }} · {{ quote.currency }}</div>
+    <div class="text-muted">{{ quote.customer|default:"No client" }} · {{ quote.plant }} · {{ quote.currency }}</div>
   </div>
   <div class="d-flex gap-2 flex-wrap">
     {% if quote.is_editable %}
-      <a class="btn btn-outline-primary btn-sm" href="{% url 'quotes:quote_add_line' quote.pk %}">Add line</a>
+      <a class="btn btn-primary btn-sm" href="{% url 'processes:quote_add_process' quote.pk %}">Add process</a>
       <form method="post" action="{% url 'quotes:quote_calculate' quote.pk %}">{% csrf_token %}
-        <button class="btn btn-primary btn-sm" type="submit">Calculate</button>
+        <button class="btn btn-outline-primary btn-sm" type="submit">Calculate</button>
       </form>
     {% endif %}
     {% if quote.status == 'CALCULATED' or quote.status == 'ISSUED' %}
@@ -32,8 +32,64 @@
 
 <div class="row g-3">
   <div class="col-lg-7">
+    <div class="bg-white border rounded p-3 mb-3">
+      <h2 class="h6">Processes</h2>
+      {% for qp in quote.quote_processes.all %}
+      <div class="border rounded p-2 mb-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong>{{ qp.process.code }}</strong> — {{ qp.process.name }}
+            {% if qp.material %}<span class="text-muted small">· Mat {{ qp.material.code }}</span>{% endif %}
+          </div>
+          <div class="text-end small">
+            {% if qp.computed_total is not None %}
+              <div>Own: {{ qp.computed_own }} · <strong>Total: {{ qp.computed_total }}</strong> {{ qp.process.result_unit }}</div>
+            {% else %}
+              <span class="text-muted">Not calculated</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="small mt-1">
+          Fields:
+          {% for fv in qp.field_values.all %}{{ fv.field_code }}={{ fv.value }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+          {% if quote.is_editable %}
+            · <a href="{% url 'processes:quote_process_fields' quote.pk qp.pk %}">Edit fields</a>
+            · <a href="{% url 'processes:quote_add_subprocess' quote.pk qp.pk %}">Add sub process</a>
+            <form class="d-inline" method="post" action="{% url 'processes:quote_process_remove' quote.pk qp.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-link btn-sm text-danger p-0"
+                data-mq-confirm-submit data-mq-title="Remove process?" data-mq-message="Remove {{ qp.process.code }} from this quote?" data-mq-confirm-label="Remove" data-mq-variant="danger">Remove</button>
+            </form>
+          {% endif %}
+        </div>
+        {% if qp.subprocesses.exists %}
+        <ul class="small mb-0 mt-2 ps-3">
+          {% for qs in qp.subprocesses.all %}
+          <li>
+            <strong>{{ qs.subprocess.code }}</strong>
+            {% if qs.computed_value is not None %}→ {{ qs.computed_value }} {{ qs.subprocess.result_unit }}{% endif %}
+            {% if quote.is_editable %}
+              · <a href="{% url 'processes:quote_subprocess_fields' quote.pk qp.pk qs.pk %}">Edit</a>
+              <form class="d-inline" method="post" action="{% url 'processes:quote_subprocess_remove' quote.pk qp.pk qs.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link btn-sm text-danger p-0"
+                  data-mq-confirm-submit data-mq-title="Remove sub process?" data-mq-message="Remove {{ qs.subprocess.code }}?" data-mq-confirm-label="Remove" data-mq-variant="danger">Remove</button>
+              </form>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p class="text-muted mb-0">No processes yet. Add a process to build this quote.</p>
+      {% endfor %}
+    </div>
+
+    {% if quote.lines.exists %}
+    {# Legacy template lines — kept for old quotes; not offered in UI for new work #}
     <div class="bg-white border rounded p-3">
-      <h2 class="h6">Lines</h2>
+      <h2 class="h6 text-muted">Legacy template lines</h2>
       {% for line in quote.lines.all %}
       <div class="border-bottom py-2">
         <div class="d-flex justify-content-between">
@@ -41,44 +97,48 @@
           <span>Qty {{ line.quantity }}</span>
         </div>
         <div class="small text-muted">{{ line.template.code }} v{{ line.template.version }}</div>
-        <div class="small">
-          Params:
-          {% for pv in line.parameter_values.all %}{{ pv.parameter_code }}={{ pv.value }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
-          {% if quote.is_editable %}
-            · <a href="{% url 'quotes:line_parameters' quote.pk line.pk %}">Edit params</a>
-          {% endif %}
-        </div>
         {% if line.snapshot.totals %}
         <div class="small mt-1">
           Cost {{ line.snapshot.totals.total_cost }} → Sell {{ line.snapshot.totals.selling_price }}
-          (mat {{ line.snapshot.totals.material }}, mch {{ line.snapshot.totals.machine }}, lab {{ line.snapshot.totals.labor }})
         </div>
         {% endif %}
       </div>
-      {% empty %}
-      <p class="text-muted mb-0">No lines yet.</p>
       {% endfor %}
     </div>
+    {% endif %}
   </div>
   <div class="col-lg-5">
     <div class="bg-white border rounded p-3 mb-3">
-      <h2 class="h6">Customer</h2>
-      <p class="small mb-0">{{ quote.customer.name }}<br>{{ quote.customer.company }}<br>{{ quote.customer.email }}<br>
-      {{ quote.customer.address_line1 }} {{ quote.customer.city }}</p>
+      <h2 class="h6">Client</h2>
+      {% if quote.customer %}
+      <p class="small mb-0">
+        <a href="{% url 'quotes:client_detail' quote.customer.pk %}">{{ quote.customer.code }}</a><br>
+        {{ quote.customer.name }}{% if quote.customer.company %} / {{ quote.customer.company }}{% endif %}<br>
+        {{ quote.customer.email }}{% if quote.customer.phone %} · {{ quote.customer.phone }}{% endif %}<br>
+        {% if quote.customer.gstin %}GSTIN: {{ quote.customer.gstin }}<br>{% endif %}
+        {{ quote.customer.address_line1 }} {{ quote.customer.city }}
+      </p>
+      {% else %}
+      <p class="small text-muted mb-0">Client was removed from master data.</p>
+      {% endif %}
       <p class="small text-muted mt-2 mb-0">Valid until: {{ quote.valid_until|default:"—" }}</p>
       <p class="small">{{ quote.notes }}</p>
     </div>
     {% if quote.calculation %}
     <div class="bg-white border rounded p-3">
-      <h2 class="h6">Internal cost breakdown</h2>
-      <p class="small text-muted">Shown on-screen only — customer PDF hides internal cost.</p>
+      <h2 class="h6">Totals</h2>
       <ul class="small mb-0">
-        <li>Material: {{ quote.calculation.data.totals.material }}</li>
-        <li>Machine: {{ quote.calculation.data.totals.machine }}</li>
-        <li>Labor: {{ quote.calculation.data.totals.labor }}</li>
-        <li>Other: {{ quote.calculation.data.totals.other }}</li>
-        <li><strong>Total cost:</strong> {{ quote.calculation.data.totals.total_cost }}</li>
-        <li><strong>Selling:</strong> {{ quote.calculation.data.totals.selling_price }}</li>
+        {% if quote.calculation.data.totals.process_money is not None %}
+        <li><strong>Process money:</strong> {{ quote.calculation.data.totals.process_money }} {{ quote.currency }}</li>
+        <li><strong>Process time:</strong> {{ quote.calculation.data.totals.process_time }}</li>
+        {% endif %}
+        {% if quote.calculation.data.totals.selling_price %}
+        <li>Legacy selling: {{ quote.calculation.data.totals.selling_price }}</li>
+        <li>Legacy total cost: {{ quote.calculation.data.totals.total_cost }}</li>
+        {% endif %}
+        {% if quote.calculation.data.totals.combined_selling is not None %}
+        <li><strong>Combined selling:</strong> {{ quote.calculation.data.totals.combined_selling }} {{ quote.currency }}</li>
+        {% endif %}
       </ul>
     </div>
     {% endif %}

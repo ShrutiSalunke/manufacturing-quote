@@ -1,17 +1,26 @@
 {% extends "base.html" %}
 {% block title %}New Quote{% endblock %}
+{% block breadcrumb %}<a href="{% url 'quotes:quote_list' %}">Quotes</a> / New{% endblock %}
 {% block content %}
 <h1 class="h3 mb-3">New Quote</h1>
-<form method="post" class="bg-white border rounded p-4">
+<form method="post" class="bg-white border rounded p-4" style="max-width:720px">
   {% csrf_token %}
-  <h2 class="h6">Customer</h2>
-  {% for field in cform %}
-  <div class="mb-2"><label class="form-label">{{ field.label }}</label>{{ field }}{% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-  {% endfor %}
-  <h2 class="h6 mt-3">Quote</h2>
   {% for field in qform %}
-  <div class="mb-2"><label class="form-label">{{ field.label }}</label>{{ field }}{% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+  <div class="mb-3">
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  </div>
   {% endfor %}
+  <p class="small text-muted">
+    Need a new client?
+    {% if user.is_app_admin %}
+      <a href="{% url 'quotes:client_create' %}">Add client</a>
+    {% else %}
+      Ask an admin to add them under <a href="{% url 'quotes:client_list' %}">Clients</a>.
+    {% endif %}
+  </p>
   <button class="btn btn-success mt-2" type="submit">Create</button>
+  <a class="btn btn-link" href="{% url 'quotes:quote_list' %}">Cancel</a>
 </form>
 {% endblock %}

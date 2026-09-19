@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Link Sub Processes{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <h1 class="mq-master-title">Link Sub Processes — {{ process.code }}</h1>
+  </div>
+
+  <form method="post" class="mq-form-card mq-master-card">
+    {% csrf_token %}
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Available sub processes</h2>
+      <p class="text-muted small mb-3">One sub process can belong to many processes. Select all that apply.</p>
+      <div class="mq-field">
+        {{ form.subprocesses }}
+        {% for e in form.subprocesses.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
+    <div class="mq-form-actions">
+      <a class="btn btn-outline-secondary" href="{% url 'processes:process_detail' process.pk %}">Cancel</a>
+      <button class="btn mq-btn-theme" type="submit">Save links</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

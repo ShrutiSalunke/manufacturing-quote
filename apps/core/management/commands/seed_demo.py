@@ -246,18 +246,42 @@ class Command(BaseCommand):
             defaults={"method": "MARGIN_PERCENT", "value_or_formula": "25"},
         )
 
-        customer, _ = Customer.objects.get_or_create(
-            email="buyer@acme.example",
-            defaults={
-                "name": "Priya Sharma",
-                "company": "Acme Industrial",
-                "address_line1": "12 Industrial Estate",
-                "city": "Pune",
-                "state": "MH",
-                "postal_code": "411001",
-                "country": "India",
-            },
-        )
+        customer = Customer.objects.filter(email="buyer@acme.example").order_by("id").first()
+        if not customer:
+            customer = Customer.objects.filter(code="CLI-ACME").first()
+        if customer:
+            # Merge any duplicate CLI-ACME row created by an earlier seed pass
+            for dup in Customer.objects.filter(code="CLI-ACME").exclude(pk=customer.pk):
+                Quote.objects.filter(customer=dup).update(customer=customer)
+                dup.delete()
+            customer.code = "CLI-ACME"
+            customer.name = "Priya Sharma"
+            customer.email = "buyer@acme.example"
+            customer.phone = "+91 98765 43210"
+            customer.company = "Acme Industrial"
+            customer.gstin = "27AAAAA0000A1Z5"
+            customer.address_line1 = "12 Industrial Estate"
+            customer.city = "Pune"
+            customer.state = "MH"
+            customer.postal_code = "411001"
+            customer.country = "India"
+            customer.is_active = True
+            customer.save()
+        else:
+            customer = Customer.objects.create(
+                code="CLI-ACME",
+                name="Priya Sharma",
+                email="buyer@acme.example",
+                phone="+91 98765 43210",
+                company="Acme Industrial",
+                gstin="27AAAAA0000A1Z5",
+                address_line1="12 Industrial Estate",
+                city="Pune",
+                state="MH",
+                postal_code="411001",
+                country="India",
+                is_active=True,
+            )
 
         quote, _ = Quote.objects.get_or_create(
             number="Q-DEMO-001",

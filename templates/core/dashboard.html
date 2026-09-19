@@ -5,7 +5,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4" data-tour="nav-dashboard">
   <div>
     <h1 class="h3 mb-1">Dashboard</h1>
-    <p class="text-muted mb-0">Import masters → configure templates → quote → PDF</p>
+    <p class="text-muted mb-0">Import masters → configure processes → quote → PDF</p>
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-primary" href="{% url 'imports_excel:hub' %}">Imports</a>
@@ -16,16 +16,17 @@
   <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Materials</div><div class="fs-3 fw-semibold">{{ material_count }}</div></div></div>
   <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Machines</div><div class="fs-3 fw-semibold">{{ machine_count }}</div></div></div>
   <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Labor Roles</div><div class="fs-3 fw-semibold">{{ labor_count }}</div></div></div>
-  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Published Templates</div><div class="fs-3 fw-semibold">{{ template_count }}</div></div></div>
+  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Processes</div><div class="fs-3 fw-semibold">{{ process_count }}</div></div></div>
+  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Sub Processes</div><div class="fs-3 fw-semibold">{{ subprocess_count }}</div></div></div>
   <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Quotes</div><div class="fs-3 fw-semibold">{{ quote_count }}</div></div></div>
 </div>
 <div class="mt-4 p-3 bg-white border rounded-3">
   <h2 class="h6">Quick start</h2>
   <ol class="mb-0 small">
     <li>Download Excel templates from <a href="{% url 'imports_excel:hub' %}">Imports</a> (or use samples under <code>excel_templates/samples/</code>).</li>
-    <li>Review Catalog and Product Templates.</li>
-    <li>Open the draft demo quote, Calculate, then Generate PDF.</li>
-    <li>If something fails, open <strong>Error Logs</strong> and search by the correlation id shown in the flash message.</li>
+    <li>Define <a href="{% url 'processes:process_list' %}">Processes</a> and <a href="{% url 'processes:subprocess_list' %}">Sub Processes</a> with fields and formulas.</li>
+    <li>Create a quote, add processes (and optional sub processes), Calculate, then Generate PDF.</li>
+    <li>If something fails, open <strong>Error Logs</strong> and search by the correlation id shown in the popup.</li>
   </ol>
 </div>
 {% endblock %}
