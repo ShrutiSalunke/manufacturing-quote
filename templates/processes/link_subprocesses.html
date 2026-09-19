@@ -15,8 +15,15 @@
     <div class="mq-form-section">
       <h2 class="mq-form-section-title">Available sub processes</h2>
       <p class="text-muted small mb-3">One sub process can belong to many processes. Select all that apply.</p>
-      <div class="mq-field">
-        {{ form.subprocesses }}
+      <div class="mq-field mq-link-subprocess-list">
+        {% for checkbox in form.subprocesses %}
+        <div class="form-check mb-2">
+          {{ checkbox.tag }}
+          <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+        </div>
+        {% empty %}
+        <p class="text-muted small mb-0">No active sub processes for this plant yet.</p>
+        {% endfor %}
         {% for e in form.subprocesses.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
       </div>
     </div>

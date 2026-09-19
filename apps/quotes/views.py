@@ -196,8 +196,52 @@ def client_permanent_delete(request, pk):
 
 @login_required
 def quote_list(request):
-    quotes = Quote.objects.select_related("customer", "plant", "created_by").all()
-    return render(request, "quotes/quote_list.html", {"quotes": quotes})
+    qs = Quote.objects.select_related("customer", "plant", "created_by").order_by(
+        "-created_at", "-id"
+    )
+    q = (request.GET.get("q") or "").strip()
+    status = (request.GET.get("status") or "").strip().upper()
+    if q:
+        qs = qs.filter(
+            Q(number__icontains=q)
+            | Q(notes__icontains=q)
+            | Q(customer__code__icontains=q)
+            | Q(customer__name__icontains=q)
+            | Q(customer__company__icontains=q)
+            | Q(plant__code__icontains=q)
+            | Q(plant__name__icontains=q)
+        )
+    valid_statuses = {c.value for c in Quote.Status}
+    if status in valid_statuses:
+        qs = qs.filter(status=status)
+    else:
+        status = ""
+
+    try:
+        per_page = int(request.GET.get("per_page") or CLIENT_DEFAULT_PER_PAGE)
+    except (TypeError, ValueError):
+        per_page = CLIENT_DEFAULT_PER_PAGE
+    if per_page not in CLIENT_PER_PAGE_CHOICES:
+        per_page = CLIENT_DEFAULT_PER_PAGE
+
+    paginator = Paginator(qs, per_page)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    context = {
+        "page_obj": page_obj,
+        "quotes": page_obj.object_list,
+        "q": q,
+        "status": status,
+        "status_choices": Quote.Status.choices,
+        "per_page": per_page,
+        "per_page_choices": CLIENT_PER_PAGE_CHOICES,
+        "page_numbers": _page_number_window(page_obj),
+    }
+    template = (
+        "quotes/partials/quote_table_panel.html"
+        if getattr(request, "htmx", False)
+        else "quotes/quote_list.html"
+    )
+    return render(request, template, context)
 
 
 @login_required

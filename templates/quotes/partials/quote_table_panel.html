@@ -1,0 +1,139 @@
+<div id="quote-table-panel" class="mq-master-panel">
+  <div class="mq-master-card">
+    <div class="mq-master-card-head d-flex justify-content-between align-items-center">
+      <h2>Quotes</h2>
+      <span class="small text-muted">{{ page_obj.paginator.count }} total</span>
+    </div>
+
+    {% if quotes %}
+    <div class="table-responsive">
+      <table class="mq-master-table">
+        <thead>
+          <tr>
+            <th>Number</th>
+            <th>Client</th>
+            <th>Plant</th>
+            <th>Status</th>
+            <th>Currency</th>
+            <th>Created</th>
+            <th class="mq-actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for q in quotes %}
+          <tr>
+            <td data-label="Number">{{ q.number }}{% if q.version > 1 %} <span class="text-muted">v{{ q.version }}</span>{% endif %}</td>
+            <td data-label="Client">
+              {% if q.customer %}
+                {{ q.customer.code }}{% if q.customer.company %} — {{ q.customer.company }}{% elif q.customer.name %} — {{ q.customer.name }}{% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td data-label="Plant">{{ q.plant.code }}</td>
+            <td data-label="Status">
+              {% if q.status == "DRAFT" %}
+                <span class="mq-status-pill is-inactive">Draft</span>
+              {% elif q.status == "CALCULATED" %}
+                <span class="mq-status-pill is-active">Calculated</span>
+              {% else %}
+                <span class="mq-status-pill is-issued">Issued</span>
+              {% endif %}
+            </td>
+            <td data-label="Currency">{{ q.currency }}</td>
+            <td data-label="Created">{{ q.created_at|date:"Y-m-d H:i" }}</td>
+            <td data-label="Actions" class="mq-actions-col">
+              <div class="mq-master-actions">
+                <a class="mq-icon-btn mq-icon-btn-view" href="{% url 'quotes:quote_detail' q.pk %}" title="View quote" aria-label="View {{ q.number }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mq-master-footer">
+      <div class="mq-footer-left">
+        <label class="small text-muted mb-0" for="per_page">Rows per page</label>
+        <select
+          id="per_page"
+          class="form-select form-select-sm"
+          name="per_page"
+          hx-get="{% url 'quotes:quote_list' %}"
+          hx-target="#quote-table-panel"
+          hx-swap="outerHTML swap:0.15s"
+          hx-include="#quote-filter-form input[name='q'], #quote-filter-form select[name='status']"
+          hx-vals='{"page": "1"}'
+          hx-push-url="true"
+        >
+          {% for n in per_page_choices %}
+          <option value="{{ n }}" {% if per_page == n %}selected{% endif %}>{{ n }}</option>
+          {% endfor %}
+        </select>
+        <span class="mq-range">
+          {% if page_obj.paginator.count %}
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+          {% else %}
+            Showing 0 of 0
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="mq-footer-right mq-pager">
+        {% if page_obj.has_previous %}
+          <a
+            href="?page={{ page_obj.previous_page_number }}&amp;q={{ q|urlencode }}&amp;status={{ status }}&amp;per_page={{ per_page }}"
+            hx-get="{% url 'quotes:quote_list' %}?page={{ page_obj.previous_page_number }}&amp;q={{ q|urlencode }}&amp;status={{ status }}&amp;per_page={{ per_page }}"
+            hx-target="#quote-table-panel"
+            hx-swap="outerHTML swap:0.15s"
+            hx-push-url="true"
+            aria-label="Previous"
+          >‹</a>
+        {% else %}
+          <span class="mq-page is-disabled">‹</span>
+        {% endif %}
+
+        {% for num in page_numbers %}
+          {% if num is None %}
+            <span class="mq-ellipsis">…</span>
+          {% elif num == page_obj.number %}
+            <span class="mq-page is-current">{{ num }}</span>
+          {% else %}
+            <a
+              href="?page={{ num }}&amp;q={{ q|urlencode }}&amp;status={{ status }}&amp;per_page={{ per_page }}"
+              hx-get="{% url 'quotes:quote_list' %}?page={{ num }}&amp;q={{ q|urlencode }}&amp;status={{ status }}&amp;per_page={{ per_page }}"
+              hx-target="#quote-table-panel"
+              hx-swap="outerHTML swap:0.15s"
+              hx-push-url="true"
+            >{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <a
+            href="?page={{ page_obj.next_page_number }}&amp;q={{ q|urlencode }}&amp;status={{ status }}&amp;per_page={{ per_page }}"
+            hx-get="{% url 'quotes:quote_list' %}?page={{ page_obj.next_page_number }}&amp;q={{ q|urlencode }}&amp;status={{ status }}&amp;per_page={{ per_page }}"
+            hx-target="#quote-table-panel"
+            hx-swap="outerHTML swap:0.15s"
+            hx-push-url="true"
+            aria-label="Next"
+          >›</a>
+        {% else %}
+          <span class="mq-page is-disabled">›</span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state m-3">
+      <p class="mb-2">No quotes found.</p>
+      <a class="btn btn-primary" href="{% url 'quotes:quote_create' %}">Create first quote</a>
+    </div>
+    {% endif %}
+  </div>
+</div>

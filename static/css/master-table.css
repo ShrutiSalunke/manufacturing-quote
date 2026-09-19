@@ -264,6 +264,11 @@
   color: #374151;
 }
 
+.mq-status-pill.is-issued {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
 .mq-actions-col {
   width: 11.5rem;
   text-align: center !important;
@@ -753,6 +758,23 @@
 
 .mq-formula-ac-hint {
   margin-top: 0.35rem;
+}
+
+.mq-link-subprocess-list .form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.75rem;
+}
+
+.mq-link-subprocess-list .form-check-input {
+  margin-top: 0;
+  flex: 0 0 auto;
+}
+
+.mq-link-subprocess-list .form-check-label {
+  margin: 0;
+  color: var(--mq-master-text);
 }
 
 .mq-delete-check {

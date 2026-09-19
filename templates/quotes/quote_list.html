@@ -1,27 +1,82 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Quotes{% endblock %}
-{% block breadcrumb %}Quotes{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
-  <h1 class="h3">Quotes</h1>
-  <a class="btn btn-success" href="{% url 'quotes:quote_create' %}">New quote</a>
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <h1 class="mq-master-title">Quotes</h1>
+
+    <form
+      id="quote-filter-form"
+      class="mq-master-controls"
+      method="get"
+      hx-get="{% url 'quotes:quote_list' %}"
+      hx-target="#quote-table-panel"
+      hx-swap="outerHTML swap:0.15s"
+      hx-push-url="true"
+      hx-trigger="submit, change delay:50ms from:select, keyup changed delay:300ms from:input[type='search']"
+    >
+      <input type="hidden" name="page" value="1">
+      <input type="hidden" name="per_page" id="filter-per-page" value="{{ per_page }}">
+
+      <div class="mq-master-search">
+        <span class="mq-search-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M20 20l-3.5-3.5"></path>
+          </svg>
+        </span>
+        <input
+          type="search"
+          name="q"
+          value="{{ q }}"
+          placeholder="Search here"
+          autocomplete="off"
+          aria-label="Search quotes"
+        >
+      </div>
+
+      <div class="mq-master-filter">
+        <span class="mq-filter-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="7" y1="12" x2="17" y2="12"></line>
+            <line x1="10" y1="17" x2="14" y2="17"></line>
+            <circle cx="9" cy="7" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="12" cy="17" r="1.5" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </span>
+        <select class="form-select" name="status" aria-label="Status filter">
+          <option value="" {% if status == "" %}selected{% endif %}>All statuses</option>
+          {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <a class="btn mq-btn-theme mq-master-add" href="{% url 'quotes:quote_create' %}">New Quote</a>
+    </form>
+  </div>
+
+  {% include "quotes/partials/quote_table_panel.html" %}
 </div>
-{% if quotes %}
-<table class="table table-hover bg-white">
-  <thead><tr><th>Number</th><th>Client</th><th>Plant</th><th>Status</th><th>Created</th></tr></thead>
-  <tbody>
-  {% for q in quotes %}
-  <tr>
-    <td><a href="{% url 'quotes:quote_detail' q.pk %}">{{ q.number }}</a></td>
-    <td>{{ q.customer|default:"—" }}</td>
-    <td>{{ q.plant.code }}</td>
-    <td>{{ q.status }}</td>
-    <td>{{ q.created_at }}</td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<div class="empty-state"><p>No quotes yet.</p><a class="btn btn-success" href="{% url 'quotes:quote_create' %}">Create quote</a></div>
-{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+<script>
+  document.body.addEventListener("htmx:configRequest", function (event) {
+    event.detail.headers["X-CSRFToken"] = window.MQ && window.MQ.csrfToken;
+  });
+  document.body.addEventListener("htmx:afterSwap", function (event) {
+    if (event.detail.target && event.detail.target.id === "quote-table-panel") {
+      var sel = document.getElementById("per_page");
+      var hidden = document.getElementById("filter-per-page");
+      if (sel && hidden) hidden.value = sel.value;
+    }
+  });
+</script>
 {% endblock %}
