@@ -1,22 +1,126 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ title }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
 {% block content %}
-<h1 class="h3 mb-3">{{ title }}</h1>
-<form method="post" class="bg-white border rounded p-4" style="max-width:720px">
-  {% csrf_token %}
-  {% for field in form %}
-    <div class="mb-3 {% if field.field.widget.input_type == 'checkbox' %}form-check{% endif %}">
-      {% if field.field.widget.input_type == 'checkbox' %}
-        {{ field }} <label class="form-check-label">{{ field.label }}</label>
-      {% else %}
-        <label class="form-label">{{ field.label }}</label>
-        {{ field }}
-      {% endif %}
-      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-      {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <h1 class="mq-master-title">{{ title }}</h1>
+  </div>
+
+  <form method="post" id="custom-field-form" class="mq-form-card mq-master-card" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="mq-form-banner mq-form-banner-error">
+      {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
     </div>
-  {% endfor %}
-  <button class="btn btn-success" type="submit">Save</button>
-  <a class="btn btn-link" href="{% url 'catalog:custom_field_list' %}">Cancel</a>
-</form>
+    {% endif %}
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Where it appears</h2>
+      <div class="mq-form-grid">
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.entity_type.id_for_label }}">{{ form.entity_type.label }}</label>
+          {{ form.entity_type }}
+          {% if form.entity_type.help_text %}<div class="mq-help">{{ form.entity_type.help_text }}</div>{% endif %}
+          {% for e in form.entity_type.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.plant.id_for_label }}">{{ form.plant.label }}</label>
+          {{ form.plant }}
+          {% if form.plant.help_text %}<div class="mq-help">{{ form.plant.help_text }}</div>{% endif %}
+          {% for e in form.plant.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Column definition</h2>
+      <div class="mq-form-grid">
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.label.id_for_label }}">{{ form.label.label }}</label>
+          {{ form.label }}
+          {% if form.label.help_text %}<div class="mq-help">{{ form.label.help_text }}</div>{% endif %}
+          {% for e in form.label.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.key.id_for_label }}">{{ form.key.label }}</label>
+          {{ form.key }}
+          {% if form.key.help_text %}<div class="mq-help">{{ form.key.help_text }}</div>{% endif %}
+          {% for e in form.key.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.data_type.id_for_label }}">{{ form.data_type.label }}</label>
+          {{ form.data_type }}
+          {% for e in form.data_type.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.sort_order.id_for_label }}">{{ form.sort_order.label }}</label>
+          {{ form.sort_order }}
+          {% for e in form.sort_order.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field mq-field-span-2">
+          <label class="mq-label" for="{{ form.enum_choices_text.id_for_label }}">{{ form.enum_choices_text.label }}</label>
+          {{ form.enum_choices_text }}
+          {% if form.enum_choices_text.help_text %}<div class="mq-help">{{ form.enum_choices_text.help_text }}</div>{% endif %}
+          {% for e in form.enum_choices_text.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Import &amp; status</h2>
+      <div class="mq-form-grid">
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.import_column_header.id_for_label }}">{{ form.import_column_header.label }}</label>
+          {{ form.import_column_header }}
+          {% if form.import_column_header.help_text %}<div class="mq-help">{{ form.import_column_header.help_text }}</div>{% endif %}
+          {% for e in form.import_column_header.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field mq-field-check">
+          <label class="mq-check-label" for="{{ form.is_required.id_for_label }}">
+            {{ form.is_required }}
+            <span>{{ form.is_required.label }}</span>
+          </label>
+        </div>
+        <div class="mq-field mq-field-check">
+          <label class="mq-check-label" for="{{ form.is_importable.id_for_label }}">
+            {{ form.is_importable }}
+            <span>{{ form.is_importable.label }}</span>
+          </label>
+        </div>
+        <div class="mq-field mq-field-check">
+          <label class="mq-check-label" for="{{ form.is_active.id_for_label }}">
+            {{ form.is_active }}
+            <span>{{ form.is_active.label }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-actions">
+      <a class="btn btn-outline-secondary" href="{% if object %}{% url 'catalog:custom_field_detail' object.pk %}{% else %}{% url 'catalog:custom_field_list' %}{% endif %}">Cancel</a>
+      <button class="btn mq-btn-theme" type="submit">Save</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  (function () {
+    if (!window.MQ || !MQ.alert) return;
+    var form = document.getElementById("custom-field-form");
+    if (!form) return;
+    var firstError = form.querySelector(".mq-field-error, .mq-form-banner-error");
+    if (firstError) {
+      MQ.alert({
+        title: "Please fix the form",
+        message: firstError.textContent.trim() || "Some fields need your attention before saving.",
+        variant: "warning",
+      });
+    }
+  })();
+</script>
 {% endblock %}

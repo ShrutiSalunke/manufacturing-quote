@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ field.label }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block breadcrumb %}<a href="{% url 'catalog:custom_field_list' %}">Custom Fields</a> / {{ field.label }}{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <div class="mq-detail-heading">
+      <h1 class="mq-master-title">{{ field.label }}</h1>
+      {% if field.is_active %}
+        <span class="mq-status-pill is-active">Active</span>
+      {% else %}
+        <span class="mq-status-pill is-inactive">Inactive</span>
+      {% endif %}
+    </div>
+    <div class="mq-master-controls">
+      <a class="btn btn-outline-primary mq-master-add" href="{% url 'catalog:custom_field_edit' field.pk %}">Edit</a>
+      {% if field.is_active %}
+      <form method="post" action="{% url 'catalog:custom_field_soft_delete' field.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'catalog:custom_field_detail' field.pk %}">
+        <button
+          class="btn btn-outline-secondary mq-master-add"
+          type="submit"
+          data-mq-confirm-submit
+          data-mq-title="Soft delete custom column?"
+          data-mq-message="“{{ field.label }}” will be set to Inactive and hidden from master tables."
+          data-mq-confirm-label="Soft delete"
+          data-mq-variant="warning"
+        >Soft delete</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'catalog:custom_field_restore' field.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'catalog:custom_field_detail' field.pk %}">
+        <button class="btn btn-outline-success mq-master-add" type="submit">Restore</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'catalog:custom_field_permanent_delete' field.pk %}">
+        {% csrf_token %}
+        <button
+          class="btn btn-outline-danger mq-master-add"
+          type="submit"
+          data-mq-confirm-submit
+          data-mq-title="Permanently delete custom column?"
+          data-mq-message="“{{ field.label }}” will be removed forever, including any saved values on Materials/Machines/Labor rows."
+          data-mq-confirm-label="Delete permanently"
+          data-mq-variant="danger"
+        >Delete permanently</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="mq-collapse-stack">
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-column-section" aria-expanded="true" aria-controls="mq-column-section">
+        <span class="mq-form-section-title mb-0">Column</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-column-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Label</div>
+              <div class="mq-detail-value">{{ field.label }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Key</div>
+              <div class="mq-detail-value"><code>{{ field.key }}</code></div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Applies to</div>
+              <div class="mq-detail-value">
+                {% if field.entity_type == 'MATERIAL' %}Materials
+                {% elif field.entity_type == 'MACHINE' %}Machines
+                {% elif field.entity_type == 'LABOR' %}Labor Roles
+                {% else %}{{ field.get_entity_type_display }}{% endif %}
+              </div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Data type</div>
+              <div class="mq-detail-value">{{ field.get_data_type_display }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Plant</div>
+              <div class="mq-detail-value">{% if field.plant %}{{ field.plant }}{% else %}All plants{% endif %}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Display order</div>
+              <div class="mq-detail-value">{{ field.sort_order }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-import-section" aria-expanded="true" aria-controls="mq-import-section">
+        <span class="mq-form-section-title mb-0">Import &amp; rules</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-import-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Excel header</div>
+              <div class="mq-detail-value">{{ field.import_column_header|default:field.key }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Required</div>
+              <div class="mq-detail-value">{% if field.is_required %}Yes{% else %}No{% endif %}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">In Excel template</div>
+              <div class="mq-detail-value">{% if field.is_importable %}Yes{% else %}No{% endif %}</div>
+            </div>
+            {% if field.enum_choices %}
+            <div class="mq-detail-item mq-field-span-2">
+              <div class="mq-detail-label">Enum choices</div>
+              <div class="mq-detail-value">{{ field.enum_choices|join:", " }}</div>
+            </div>
+            {% endif %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Created</div>
+              <div class="mq-detail-value">{{ field.created_at|date:"Y-m-d H:i" }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

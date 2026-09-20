@@ -9,6 +9,9 @@
             <th>Name</th>
             <th>Plant</th>
             <th>Hourly rate</th>
+            {% for col in custom_columns %}
+            <th>{{ col.label }}</th>
+            {% endfor %}
             <th>Status</th>
             <th class="mq-actions-col">Actions</th>
           </tr>
@@ -20,6 +23,9 @@
             <td data-label="Name">{{ r.name }}</td>
             <td data-label="Plant">{{ r.plant.code }}</td>
             <td data-label="Hourly rate">{{ r.hourly_rate }}</td>
+            {% for val in r.custom_display_list %}
+            <td>{{ val }}</td>
+            {% endfor %}
             <td data-label="Status">
               {% if r.is_active %}
                 <span class="mq-status-pill is-active">Active</span>

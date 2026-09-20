@@ -90,6 +90,29 @@
         </div>
       </div>
     </div>
+
+    {% if custom_rows %}
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-custom-section" aria-expanded="true" aria-controls="mq-custom-section">
+        <span class="mq-form-section-title mb-0">Custom columns</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-custom-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            {% for row in custom_rows %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">{{ row.label }}</div>
+              <div class="mq-detail-value">{{ row.value }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

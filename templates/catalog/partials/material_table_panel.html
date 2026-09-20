@@ -11,6 +11,9 @@
             <th>UOM</th>
             <th>Density</th>
             <th>Unit price</th>
+            {% for col in custom_columns %}
+            <th>{{ col.label }}</th>
+            {% endfor %}
             <th>Status</th>
             <th class="mq-actions-col">Actions</th>
           </tr>
@@ -24,6 +27,9 @@
             <td data-label="UOM">{{ m.uom }}</td>
             <td data-label="Density">{{ m.density|default:"—" }}</td>
             <td data-label="Unit price">{{ m.unit_price }} {{ m.currency }}</td>
+            {% for val in m.custom_display_list %}
+            <td>{{ val }}</td>
+            {% endfor %}
             <td data-label="Status">
               {% if m.is_active %}
                 <span class="mq-status-pill is-active">Active</span>
@@ -48,8 +54,17 @@
                 </a>
                 {% if m.is_active %}
                 <form method="post" action="{% url 'catalog:material_soft_delete' m.pk %}">{% csrf_token %}
-                  <button class="mq-icon-btn mq-icon-btn-deactivate" type="submit" title="Soft delete (Inactive)" aria-label="Soft delete {{ m.code }}"
-                    data-mq-confirm-submit data-mq-title="Soft delete material?" data-mq-message="{{ m.code }} will be set to Inactive." data-mq-confirm-label="Soft delete" data-mq-variant="warning">
+                  <button
+                    class="mq-icon-btn mq-icon-btn-deactivate"
+                    type="submit"
+                    title="Soft delete (set Inactive)"
+                    aria-label="Soft delete {{ m.code }}"
+                    data-mq-confirm-submit
+                    data-mq-title="Soft delete material?"
+                    data-mq-message="{{ m.code }} will be set to Inactive. Existing quotes keep this material."
+                    data-mq-confirm-label="Soft delete"
+                    data-mq-variant="warning"
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <circle cx="12" cy="12" r="9"></circle>
                       <path d="M9 12h6"></path>
@@ -58,7 +73,7 @@
                 </form>
                 {% else %}
                 <form method="post" action="{% url 'catalog:material_restore' m.pk %}">{% csrf_token %}
-                  <button class="mq-icon-btn mq-icon-btn-activate" type="submit" title="Restore (Active)" aria-label="Restore {{ m.code }}">
+                  <button class="mq-icon-btn mq-icon-btn-activate" type="submit" title="Restore (set Active)" aria-label="Restore {{ m.code }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <polyline points="1 4 1 10 7 10"></polyline>
                       <path d="M3.5 15a9 9 0 1 0 2.1-8.7L1 10"></path>
@@ -67,8 +82,17 @@
                 </form>
                 {% endif %}
                 <form method="post" action="{% url 'catalog:material_permanent_delete' m.pk %}">{% csrf_token %}
-                  <button class="mq-icon-btn mq-icon-btn-delete" type="submit" title="Permanently delete" aria-label="Delete {{ m.code }}"
-                    data-mq-confirm-submit data-mq-title="Permanently delete material?" data-mq-message="{{ m.code }} will be removed forever. Quote links to this material will be cleared." data-mq-confirm-label="Delete permanently" data-mq-variant="danger">
+                  <button
+                    class="mq-icon-btn mq-icon-btn-delete"
+                    type="submit"
+                    title="Permanently delete"
+                    aria-label="Permanently delete {{ m.code }}"
+                    data-mq-confirm-submit
+                    data-mq-title="Permanently delete material?"
+                    data-mq-message="{{ m.code }} will be removed forever. Quotes that used this material will keep their data, but the material link will become empty."
+                    data-mq-confirm-label="Delete permanently"
+                    data-mq-variant="danger"
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>

@@ -105,18 +105,19 @@ class LaborRoleForm(BootstrapFormMixin, forms.ModelForm):
         self.fields["plant"].queryset = Plant.objects.filter(is_active=True)
 
 
-class CustomFieldForm(forms.ModelForm):
+class CustomFieldForm(BootstrapFormMixin, forms.ModelForm):
     enum_choices_text = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
-        help_text="For enum type: comma-separated choices",
+        label="Enum choices",
+        widget=forms.Textarea(attrs={"rows": 2, "class": "form-control mq-input"}),
+        help_text="For Enum type only: comma-separated choices (e.g. Red, Blue, Green).",
     )
 
     class Meta:
         model = CustomFieldDefinition
         fields = [
-            "plant",
             "entity_type",
+            "plant",
             "key",
             "label",
             "data_type",
@@ -126,20 +127,36 @@ class CustomFieldForm(forms.ModelForm):
             "sort_order",
             "is_active",
         ]
-        widgets = {
-            "plant": forms.Select(attrs={"class": "form-select"}),
-            "entity_type": forms.Select(attrs={"class": "form-select"}),
-            "key": forms.TextInput(attrs={"class": "form-control"}),
-            "label": forms.TextInput(attrs={"class": "form-control"}),
-            "data_type": forms.Select(attrs={"class": "form-select"}),
-            "import_column_header": forms.TextInput(attrs={"class": "form-control"}),
-            "sort_order": forms.NumberInput(attrs={"class": "form-control"}),
+        labels = {
+            "entity_type": "Applies to table",
+            "key": "Column key",
+            "label": "Column label",
+            "data_type": "Data type",
+            "is_required": "Required when saving rows",
+            "is_importable": "Include in Excel import template",
+            "import_column_header": "Excel column header",
+            "sort_order": "Display order",
+            "plant": "Plant (optional)",
+        }
+        help_texts = {
+            "entity_type": "Which master table gets this extra column (Materials, Machines, or Labor Roles).",
+            "key": "Stable machine name (letters, numbers, underscores). Used in formulas as MAT_<KEY> for materials.",
+            "label": "What users see as the column / field name.",
+            "plant": "Leave blank to apply to all plants. Set a plant to limit this column to that plant only.",
+            "import_column_header": "Defaults to the column key if left blank.",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Focus Custom Fields on master tables the user can edit in the UI.
+        self.fields["entity_type"].choices = [
+            (CustomFieldDefinition.EntityType.MATERIAL, "Materials"),
+            (CustomFieldDefinition.EntityType.MACHINE, "Machines"),
+            (CustomFieldDefinition.EntityType.LABOR, "Labor Roles"),
+        ]
         self.fields["plant"].queryset = Plant.objects.filter(is_active=True)
         self.fields["plant"].required = False
+        self.fields["plant"].empty_label = "All plants"
         if self.instance and self.instance.pk and self.instance.enum_choices:
             self.fields["enum_choices_text"].initial = ", ".join(self.instance.enum_choices)
 

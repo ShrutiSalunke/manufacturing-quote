@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from apps.core.decorators import admin_required
 
+from . import custom_fields as cf
 from .forms import CustomFieldForm, LaborRoleForm, MachineForm, MaterialForm
 from .models import CustomFieldDefinition, LaborRole, Machine, Material
 
@@ -34,7 +35,17 @@ def _page_number_window(page_obj, adjacent=1):
     return result
 
 
-def _list_page(request, qs, *, search_fields, list_url_name, panel_template, page_template, context_key):
+def _list_page(
+    request,
+    qs,
+    *,
+    search_fields,
+    list_url_name,
+    panel_template,
+    page_template,
+    context_key,
+    entity_type=None,
+):
     q = (request.GET.get("q") or "").strip()
     active = request.GET.get("active") or ""
     if q:
@@ -56,15 +67,21 @@ def _list_page(request, qs, *, search_fields, list_url_name, panel_template, pag
 
     paginator = Paginator(qs, per_page)
     page_obj = paginator.get_page(request.GET.get("page"))
+    rows = list(page_obj.object_list)
+    custom_columns = []
+    if entity_type:
+        custom_columns = cf.active_definitions(entity_type)
+        rows = cf.attach_custom_columns(rows, custom_columns)
     context = {
         "page_obj": page_obj,
-        context_key: page_obj.object_list,
+        context_key: rows,
         "q": q,
         "active": active,
         "per_page": per_page,
         "per_page_choices": PER_PAGE_CHOICES,
         "page_numbers": _page_number_window(page_obj),
         "list_url_name": list_url_name,
+        "custom_columns": custom_columns,
     }
     template = panel_template if getattr(request, "htmx", False) else page_template
     return render(request, template, context)
@@ -83,6 +100,89 @@ def _form_success(request, *, form, title, obj, success_message, success_redirec
     return render(request, template, ctx)
 
 
+def _defs_for_entity(entity_type, obj=None, post_data=None, form_class=None):
+    """Resolve which custom definitions apply (plant-aware when possible)."""
+    plant = None
+    if obj is not None and getattr(obj, "plant_id", None):
+        plant = obj.plant
+    elif post_data is not None and form_class is not None:
+        # Peek plant from posted master form without full validation.
+        try:
+            plant_id = int(post_data.get("plant") or 0) or None
+        except (TypeError, ValueError):
+            plant_id = None
+        if plant_id:
+            from apps.core.models import Plant
+
+            plant = Plant.objects.filter(pk=plant_id).first()
+    return cf.active_definitions(entity_type, plant=plant)
+
+
+def _save_master_with_custom(
+    request,
+    *,
+    form_class,
+    entity_type,
+    template,
+    title,
+    list_url_name,
+    success_label,
+    instance=None,
+    initial=None,
+):
+    """Shared create/edit for Material / Machine / Labor with custom columns."""
+    obj = instance
+    if request.method == "POST":
+        form = form_class(request.POST, instance=instance)
+        definitions = _defs_for_entity(
+            entity_type, obj=instance, post_data=request.POST, form_class=form_class
+        )
+        # After plant is known from a valid form, refine definitions.
+        cf_form = cf.CustomFieldValuesForm(
+            request.POST, definitions=definitions, instance=instance
+        )
+        if form.is_valid():
+            definitions = cf.active_definitions(entity_type, plant=form.cleaned_data.get("plant"))
+            cf_form = cf.CustomFieldValuesForm(
+                request.POST, definitions=definitions, instance=instance
+            )
+            if cf_form.is_valid():
+                obj = form.save()
+                cf.save_custom_field_values(obj, cf_form.cleaned_data, definitions)
+                definitions = cf.active_definitions(entity_type, plant=obj.plant)
+                return _form_success(
+                    request,
+                    form=form_class(instance=obj),
+                    title=title,
+                    obj=obj,
+                    success_message=f"{success_label} {obj.code} {'updated' if instance else 'created'}.",
+                    success_redirect=reverse(list_url_name),
+                    template=template,
+                    context_extra={
+                        "cf_form": cf.CustomFieldValuesForm(
+                            definitions=definitions, instance=obj
+                        ),
+                        "custom_definitions": definitions,
+                    },
+                )
+    else:
+        form = form_class(instance=instance, initial=initial)
+        definitions = _defs_for_entity(entity_type, obj=instance)
+        cf_form = cf.CustomFieldValuesForm(definitions=definitions, instance=instance)
+
+    return render(
+        request,
+        template,
+        {
+            "form": form,
+            "cf_form": cf_form,
+            "custom_definitions": getattr(cf_form, "definitions", []),
+            "title": title,
+            "object": obj,
+        },
+    )
+
+
 # —— Materials ——
 
 
@@ -97,58 +197,62 @@ def material_list(request):
         panel_template="catalog/partials/material_table_panel.html",
         page_template="catalog/material_list.html",
         context_key="materials",
+        entity_type=CustomFieldDefinition.EntityType.MATERIAL,
     )
 
 
 @login_required
 def material_detail(request, pk):
     material = get_object_or_404(Material.objects.select_related("plant"), pk=pk)
-    return render(request, "catalog/material_detail.html", {"material": material})
+    definitions = cf.active_definitions(
+        CustomFieldDefinition.EntityType.MATERIAL, plant=material.plant
+    )
+    return render(
+        request,
+        "catalog/material_detail.html",
+        {
+            "material": material,
+            "custom_rows": cf.detail_rows(material, definitions),
+        },
+    )
 
 
 @admin_required
 def material_create(request):
-    if request.method == "POST":
-        form = MaterialForm(request.POST)
-        if form.is_valid():
-            obj = form.save()
-            return _form_success(
-                request,
-                form=MaterialForm(instance=obj),
-                title="Add Material",
-                obj=obj,
-                success_message=f"Material {obj.code} created.",
-                success_redirect=reverse("catalog:material_list"),
-                template="catalog/material_form.html",
-            )
-    else:
-        form = MaterialForm(initial={"is_active": True, "currency": "INR", "uom": "kg"})
-    return render(request, "catalog/material_form.html", {"form": form, "title": "Add Material"})
+    return _save_master_with_custom(
+        request,
+        form_class=MaterialForm,
+        entity_type=CustomFieldDefinition.EntityType.MATERIAL,
+        template="catalog/material_form.html",
+        title="Add Material",
+        list_url_name="catalog:material_list",
+        success_label="Material",
+        initial={"is_active": True, "currency": "INR", "uom": "kg"},
+    )
 
 
 @admin_required
 def material_edit(request, pk):
     obj = get_object_or_404(Material, pk=pk)
-    if request.method == "POST":
-        form = MaterialForm(request.POST, instance=obj)
-        if form.is_valid():
-            obj = form.save()
-            return _form_success(
-                request,
-                form=MaterialForm(instance=obj),
-                title="Edit Material",
-                obj=obj,
-                success_message=f"Material {obj.code} updated.",
-                success_redirect=reverse("catalog:material_list"),
-                template="catalog/material_form.html",
-            )
-    else:
-        form = MaterialForm(instance=obj)
-    return render(
+    return _save_master_with_custom(
         request,
-        "catalog/material_form.html",
-        {"form": form, "title": "Edit Material", "object": obj},
+        form_class=MaterialForm,
+        entity_type=CustomFieldDefinition.EntityType.MATERIAL,
+        template="catalog/material_form.html",
+        title="Edit Material",
+        list_url_name="catalog:material_list",
+        success_label="Material",
+        instance=obj,
     )
+
+
+def _safe_material_next(request, pk):
+    """Only allow redirect back to this material's detail URL."""
+    next_url = (request.POST.get("next") or "").strip()
+    detail = reverse("catalog:material_detail", args=[pk])
+    if next_url == detail or next_url.startswith(detail + "?"):
+        return next_url
+    return None
 
 
 @admin_required
@@ -158,10 +262,13 @@ def material_soft_delete(request, pk):
         if obj.is_active:
             obj.is_active = False
             obj.save(update_fields=["is_active", "updated_at"])
-            messages.success(request, f"Material {obj.code} set to Inactive.")
+            messages.success(
+                request,
+                f"Material {obj.code} soft-deleted (set to Inactive). Existing quotes keep this material.",
+            )
         else:
             messages.info(request, f"Material {obj.code} is already inactive.")
-    return redirect("catalog:material_list")
+    return redirect(_safe_material_next(request, pk) or "catalog:material_list")
 
 
 @admin_required
@@ -174,7 +281,7 @@ def material_restore(request, pk):
             messages.success(request, f"Material {obj.code} restored (Active).")
         else:
             messages.info(request, f"Material {obj.code} is already active.")
-    return redirect("catalog:material_list")
+    return redirect(_safe_material_next(request, pk) or "catalog:material_list")
 
 
 @admin_required
@@ -183,8 +290,12 @@ def material_permanent_delete(request, pk):
     if request.method == "POST":
         code = obj.code
         obj.delete()
-        messages.success(request, f"Material {code} permanently deleted.")
-    return redirect("catalog:material_list")
+        messages.success(
+            request,
+            f"Material {code} permanently deleted. Quote links to this material were cleared.",
+        )
+        return redirect("catalog:material_list")
+    return redirect("catalog:material_detail", pk=pk)
 
 
 # —— Machines ——
@@ -201,57 +312,52 @@ def machine_list(request):
         panel_template="catalog/partials/machine_table_panel.html",
         page_template="catalog/machine_list.html",
         context_key="machines",
+        entity_type=CustomFieldDefinition.EntityType.MACHINE,
     )
 
 
 @login_required
 def machine_detail(request, pk):
     machine = get_object_or_404(Machine.objects.select_related("plant"), pk=pk)
-    return render(request, "catalog/machine_detail.html", {"machine": machine})
+    definitions = cf.active_definitions(
+        CustomFieldDefinition.EntityType.MACHINE, plant=machine.plant
+    )
+    return render(
+        request,
+        "catalog/machine_detail.html",
+        {
+            "machine": machine,
+            "custom_rows": cf.detail_rows(machine, definitions),
+        },
+    )
 
 
 @admin_required
 def machine_create(request):
-    if request.method == "POST":
-        form = MachineForm(request.POST)
-        if form.is_valid():
-            obj = form.save()
-            return _form_success(
-                request,
-                form=MachineForm(instance=obj),
-                title="Add Machine",
-                obj=obj,
-                success_message=f"Machine {obj.code} created.",
-                success_redirect=reverse("catalog:machine_list"),
-                template="catalog/machine_form.html",
-            )
-    else:
-        form = MachineForm(initial={"is_active": True, "efficiency_percent": 100})
-    return render(request, "catalog/machine_form.html", {"form": form, "title": "Add Machine"})
+    return _save_master_with_custom(
+        request,
+        form_class=MachineForm,
+        entity_type=CustomFieldDefinition.EntityType.MACHINE,
+        template="catalog/machine_form.html",
+        title="Add Machine",
+        list_url_name="catalog:machine_list",
+        success_label="Machine",
+        initial={"is_active": True, "efficiency_percent": 100},
+    )
 
 
 @admin_required
 def machine_edit(request, pk):
     obj = get_object_or_404(Machine, pk=pk)
-    if request.method == "POST":
-        form = MachineForm(request.POST, instance=obj)
-        if form.is_valid():
-            obj = form.save()
-            return _form_success(
-                request,
-                form=MachineForm(instance=obj),
-                title="Edit Machine",
-                obj=obj,
-                success_message=f"Machine {obj.code} updated.",
-                success_redirect=reverse("catalog:machine_list"),
-                template="catalog/machine_form.html",
-            )
-    else:
-        form = MachineForm(instance=obj)
-    return render(
+    return _save_master_with_custom(
         request,
-        "catalog/machine_form.html",
-        {"form": form, "title": "Edit Machine", "object": obj},
+        form_class=MachineForm,
+        entity_type=CustomFieldDefinition.EntityType.MACHINE,
+        template="catalog/machine_form.html",
+        title="Edit Machine",
+        list_url_name="catalog:machine_list",
+        success_label="Machine",
+        instance=obj,
     )
 
 
@@ -305,57 +411,52 @@ def labor_list(request):
         panel_template="catalog/partials/labor_table_panel.html",
         page_template="catalog/labor_list.html",
         context_key="roles",
+        entity_type=CustomFieldDefinition.EntityType.LABOR,
     )
 
 
 @login_required
 def labor_detail(request, pk):
     role = get_object_or_404(LaborRole.objects.select_related("plant"), pk=pk)
-    return render(request, "catalog/labor_detail.html", {"role": role})
+    definitions = cf.active_definitions(
+        CustomFieldDefinition.EntityType.LABOR, plant=role.plant
+    )
+    return render(
+        request,
+        "catalog/labor_detail.html",
+        {
+            "role": role,
+            "custom_rows": cf.detail_rows(role, definitions),
+        },
+    )
 
 
 @admin_required
 def labor_create(request):
-    if request.method == "POST":
-        form = LaborRoleForm(request.POST)
-        if form.is_valid():
-            obj = form.save()
-            return _form_success(
-                request,
-                form=LaborRoleForm(instance=obj),
-                title="Add Labor Role",
-                obj=obj,
-                success_message=f"Labor role {obj.code} created.",
-                success_redirect=reverse("catalog:labor_list"),
-                template="catalog/labor_form.html",
-            )
-    else:
-        form = LaborRoleForm(initial={"is_active": True})
-    return render(request, "catalog/labor_form.html", {"form": form, "title": "Add Labor Role"})
+    return _save_master_with_custom(
+        request,
+        form_class=LaborRoleForm,
+        entity_type=CustomFieldDefinition.EntityType.LABOR,
+        template="catalog/labor_form.html",
+        title="Add Labor Role",
+        list_url_name="catalog:labor_list",
+        success_label="Labor role",
+        initial={"is_active": True},
+    )
 
 
 @admin_required
 def labor_edit(request, pk):
     obj = get_object_or_404(LaborRole, pk=pk)
-    if request.method == "POST":
-        form = LaborRoleForm(request.POST, instance=obj)
-        if form.is_valid():
-            obj = form.save()
-            return _form_success(
-                request,
-                form=LaborRoleForm(instance=obj),
-                title="Edit Labor Role",
-                obj=obj,
-                success_message=f"Labor role {obj.code} updated.",
-                success_redirect=reverse("catalog:labor_list"),
-                template="catalog/labor_form.html",
-            )
-    else:
-        form = LaborRoleForm(instance=obj)
-    return render(
+    return _save_master_with_custom(
         request,
-        "catalog/labor_form.html",
-        {"form": form, "title": "Edit Labor Role", "object": obj},
+        form_class=LaborRoleForm,
+        entity_type=CustomFieldDefinition.EntityType.LABOR,
+        template="catalog/labor_form.html",
+        title="Edit Labor Role",
+        list_url_name="catalog:labor_list",
+        success_label="Labor role",
+        instance=obj,
     )
 
 
@@ -395,13 +496,21 @@ def labor_permanent_delete(request, pk):
     return redirect("catalog:labor_list")
 
 
-# —— Custom fields (unchanged behaviour) ——
+# —— Custom fields ——
 
 
 @admin_required
 def custom_field_list(request):
-    fields = CustomFieldDefinition.objects.select_related("plant").all()
+    fields = CustomFieldDefinition.objects.select_related("plant").order_by(
+        "entity_type", "sort_order", "key"
+    )
     return render(request, "catalog/custom_field_list.html", {"fields": fields})
+
+
+@admin_required
+def custom_field_detail(request, pk):
+    field = get_object_or_404(CustomFieldDefinition.objects.select_related("plant"), pk=pk)
+    return render(request, "catalog/custom_field_detail.html", {"field": field})
 
 
 @admin_required
@@ -409,16 +518,23 @@ def custom_field_create(request):
     if request.method == "POST":
         form = CustomFieldForm(request.POST)
         if form.is_valid():
-            form.save()
+            obj = form.save()
             messages.success(
                 request,
-                "Custom field created. Excel templates will include it on next download.",
+                f"Custom column “{obj.label}” added to {obj.get_entity_type_display()}. "
+                "It now appears on that table, forms, and Excel templates.",
             )
             return redirect("catalog:custom_field_list")
     else:
-        form = CustomFieldForm()
+        form = CustomFieldForm(
+            initial={
+                "is_active": True,
+                "is_importable": True,
+                "data_type": CustomFieldDefinition.DataType.TEXT,
+            }
+        )
     return render(
-        request, "catalog/custom_field_form.html", {"form": form, "title": "Add Custom Field"}
+        request, "catalog/custom_field_form.html", {"form": form, "title": "Add Custom Column"}
     )
 
 
@@ -429,23 +545,64 @@ def custom_field_edit(request, pk):
         form = CustomFieldForm(request.POST, instance=field)
         if form.is_valid():
             form.save()
-            messages.success(request, "Custom field updated.")
+            messages.success(request, "Custom column updated.")
             return redirect("catalog:custom_field_list")
     else:
         form = CustomFieldForm(instance=field)
     return render(
-        request, "catalog/custom_field_form.html", {"form": form, "title": "Edit Custom Field"}
+        request,
+        "catalog/custom_field_form.html",
+        {"form": form, "title": "Edit Custom Column", "object": field},
     )
 
 
+def _safe_custom_field_next(request, pk):
+    next_url = (request.POST.get("next") or "").strip()
+    detail = reverse("catalog:custom_field_detail", args=[pk])
+    if next_url == detail or next_url.startswith(detail + "?"):
+        return next_url
+    return None
+
+
 @admin_required
-def custom_field_toggle(request, pk):
+def custom_field_soft_delete(request, pk):
     field = get_object_or_404(CustomFieldDefinition, pk=pk)
     if request.method == "POST":
-        field.is_active = not field.is_active
-        field.save(update_fields=["is_active"])
-        messages.info(
+        if field.is_active:
+            field.is_active = False
+            field.save(update_fields=["is_active"])
+            messages.success(
+                request,
+                f"Custom column “{field.label}” soft-deleted (set to Inactive). "
+                "It is hidden from master tables until restored.",
+            )
+        else:
+            messages.info(request, f"Custom column “{field.label}” is already inactive.")
+    return redirect(_safe_custom_field_next(request, pk) or "catalog:custom_field_list")
+
+
+@admin_required
+def custom_field_restore(request, pk):
+    field = get_object_or_404(CustomFieldDefinition, pk=pk)
+    if request.method == "POST":
+        if not field.is_active:
+            field.is_active = True
+            field.save(update_fields=["is_active"])
+            messages.success(request, f"Custom column “{field.label}” restored (Active).")
+        else:
+            messages.info(request, f"Custom column “{field.label}” is already active.")
+    return redirect(_safe_custom_field_next(request, pk) or "catalog:custom_field_list")
+
+
+@admin_required
+def custom_field_permanent_delete(request, pk):
+    field = get_object_or_404(CustomFieldDefinition, pk=pk)
+    if request.method == "POST":
+        label = field.label
+        field.delete()
+        messages.success(
             request,
-            f"Custom field '{field.key}' is now {'active' if field.is_active else 'inactive'}.",
+            f"Custom column “{label}” permanently deleted. Saved values for that column were removed.",
         )
-    return redirect("catalog:custom_field_list")
+        return redirect("catalog:custom_field_list")
+    return redirect("catalog:custom_field_detail", pk=pk)

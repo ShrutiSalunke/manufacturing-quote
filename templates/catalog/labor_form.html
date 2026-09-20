@@ -58,6 +58,8 @@
       </div>
     </div>
 
+    {% include "catalog/partials/custom_fields_form_section.html" %}
+
     <div class="mq-form-actions">
       <a class="btn btn-outline-secondary" href="{% if object %}{% url 'catalog:labor_detail' object.pk %}{% else %}{% url 'catalog:labor_list' %}{% endif %}">Cancel</a>
       <button class="btn mq-btn-theme" type="submit">Save</button>

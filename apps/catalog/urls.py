@@ -40,6 +40,17 @@ urlpatterns = [
     ),
     path("custom-fields/", views.custom_field_list, name="custom_field_list"),
     path("custom-fields/new/", views.custom_field_create, name="custom_field_create"),
+    path("custom-fields/<int:pk>/", views.custom_field_detail, name="custom_field_detail"),
     path("custom-fields/<int:pk>/edit/", views.custom_field_edit, name="custom_field_edit"),
-    path("custom-fields/<int:pk>/toggle/", views.custom_field_toggle, name="custom_field_toggle"),
+    path(
+        "custom-fields/<int:pk>/soft-delete/",
+        views.custom_field_soft_delete,
+        name="custom_field_soft_delete",
+    ),
+    path("custom-fields/<int:pk>/restore/", views.custom_field_restore, name="custom_field_restore"),
+    path(
+        "custom-fields/<int:pk>/permanent-delete/",
+        views.custom_field_permanent_delete,
+        name="custom_field_permanent_delete",
+    ),
 ]

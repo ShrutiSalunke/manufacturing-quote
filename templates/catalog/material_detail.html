@@ -22,19 +22,35 @@
       {% if material.is_active %}
       <form method="post" action="{% url 'catalog:material_soft_delete' material.pk %}">
         {% csrf_token %}
-        <button class="btn btn-outline-secondary mq-master-add" type="submit"
-          data-mq-confirm-submit data-mq-title="Soft delete material?" data-mq-message="{{ material.code }} will be set to Inactive." data-mq-confirm-label="Soft delete" data-mq-variant="warning">Soft delete</button>
+        <input type="hidden" name="next" value="{% url 'catalog:material_detail' material.pk %}">
+        <button
+          class="btn btn-outline-secondary mq-master-add"
+          type="submit"
+          data-mq-confirm-submit
+          data-mq-title="Soft delete material?"
+          data-mq-message="{{ material.code }} will be set to Inactive. Existing quotes keep this material."
+          data-mq-confirm-label="Soft delete"
+          data-mq-variant="warning"
+        >Soft delete</button>
       </form>
       {% else %}
       <form method="post" action="{% url 'catalog:material_restore' material.pk %}">
         {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'catalog:material_detail' material.pk %}">
         <button class="btn btn-outline-success mq-master-add" type="submit">Restore</button>
       </form>
       {% endif %}
       <form method="post" action="{% url 'catalog:material_permanent_delete' material.pk %}">
         {% csrf_token %}
-        <button class="btn btn-outline-danger mq-master-add" type="submit"
-          data-mq-confirm-submit data-mq-title="Permanently delete material?" data-mq-message="{{ material.code }} will be removed forever." data-mq-confirm-label="Delete permanently" data-mq-variant="danger">Delete permanently</button>
+        <button
+          class="btn btn-outline-danger mq-master-add"
+          type="submit"
+          data-mq-confirm-submit
+          data-mq-title="Permanently delete material?"
+          data-mq-message="{{ material.code }} will be removed forever. Quotes that used this material keep their data, but the material link becomes empty."
+          data-mq-confirm-label="Delete permanently"
+          data-mq-variant="danger"
+        >Delete permanently</button>
       </form>
     </div>
     {% endif %}
@@ -110,6 +126,29 @@
         </div>
       </div>
     </div>
+
+    {% if custom_rows %}
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-custom-section" aria-expanded="true" aria-controls="mq-custom-section">
+        <span class="mq-form-section-title mb-0">Custom columns</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-custom-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            {% for row in custom_rows %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">{{ row.label }}</div>
+              <div class="mq-detail-value">{{ row.value }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

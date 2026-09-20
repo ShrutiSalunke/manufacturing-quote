@@ -11,6 +11,9 @@
             <th>Hourly</th>
             <th>Setup</th>
             <th>Efficiency %</th>
+            {% for col in custom_columns %}
+            <th>{{ col.label }}</th>
+            {% endfor %}
             <th>Status</th>
             <th class="mq-actions-col">Actions</th>
           </tr>
@@ -24,6 +27,9 @@
             <td data-label="Hourly">{{ m.hourly_rate }}</td>
             <td data-label="Setup">{{ m.setup_rate }}</td>
             <td data-label="Efficiency %">{{ m.efficiency_percent }}</td>
+            {% for val in m.custom_display_list %}
+            <td>{{ val }}</td>
+            {% endfor %}
             <td data-label="Status">
               {% if m.is_active %}
                 <span class="mq-status-pill is-active">Active</span>

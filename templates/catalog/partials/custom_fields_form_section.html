@@ -1,0 +1,26 @@
+{% if cf_form and cf_form.fields %}
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Custom columns</h2>
+      <div class="mq-form-grid">
+        {% for field in cf_form %}
+          {% if field.field.widget.input_type == 'checkbox' %}
+          <div class="mq-field mq-field-check">
+            <label class="mq-check-label" for="{{ field.id_for_label }}">
+              {{ field }}
+              <span>{{ field.label }}{% if field.field.required %} *{% endif %}</span>
+            </label>
+            {% if field.help_text %}<div class="mq-help">{{ field.help_text }}</div>{% endif %}
+            {% for e in field.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+          </div>
+          {% else %}
+          <div class="mq-field">
+            <label class="mq-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="mq-help">{{ field.help_text }}</div>{% endif %}
+            {% for e in field.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+{% endif %}
