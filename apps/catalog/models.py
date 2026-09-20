@@ -23,6 +23,10 @@ class Material(models.Model):
     class Meta:
         unique_together = [("plant", "code")]
         ordering = ["code"]
+        indexes = [
+            models.Index(fields=["is_active"], name="catalog_mat_is_active_idx"),
+            models.Index(fields=["plant", "is_active"], name="catalog_mat_plant_active_idx"),
+        ]
 
     def __str__(self):
         return f"{self.code} — {self.name}"
@@ -42,6 +46,10 @@ class Machine(models.Model):
     class Meta:
         unique_together = [("plant", "code")]
         ordering = ["code"]
+        indexes = [
+            models.Index(fields=["is_active"], name="catalog_mach_is_active_idx"),
+            models.Index(fields=["plant", "is_active"], name="catalog_mach_plant_active_idx"),
+        ]
 
     def __str__(self):
         return f"{self.code} — {self.name}"
@@ -59,6 +67,10 @@ class LaborRole(models.Model):
     class Meta:
         unique_together = [("plant", "code")]
         ordering = ["code"]
+        indexes = [
+            models.Index(fields=["is_active"], name="catalog_labor_is_active_idx"),
+            models.Index(fields=["plant", "is_active"], name="catalog_labor_plant_active_idx"),
+        ]
 
     def __str__(self):
         return f"{self.code} — {self.name}"
@@ -97,6 +109,12 @@ class CustomFieldDefinition(models.Model):
     class Meta:
         unique_together = [("plant", "entity_type", "key")]
         ordering = ["sort_order", "key"]
+        indexes = [
+            models.Index(
+                fields=["entity_type", "is_active"],
+                name="catalog_cfdef_ent_act_idx",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.entity_type}.{self.key}"

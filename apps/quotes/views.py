@@ -434,7 +434,18 @@ def quote_issue(request, pk):
 
 @login_required
 def quote_clone_version(request, pk):
-    source = get_object_or_404(Quote, pk=pk)
+    source = get_object_or_404(
+        Quote.objects.select_related("plant", "customer").prefetch_related(
+            "lines__parameter_values",
+            "lines__template",
+            "quote_processes__process",
+            "quote_processes__material",
+            "quote_processes__field_values",
+            "quote_processes__subprocesses__subprocess",
+            "quote_processes__subprocesses__field_values",
+        ),
+        pk=pk,
+    )
     if request.method != "POST":
         return redirect("quotes:quote_detail", pk=pk)
     new = Quote.objects.create(

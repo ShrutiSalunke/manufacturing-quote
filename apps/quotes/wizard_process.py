@@ -30,30 +30,33 @@ def _serialize_field(f) -> dict:
     }
 
 
-def process_schema(quote, process_id: int) -> dict:
-    process = get_object_or_404(
-        Process.objects.prefetch_related("fields", "subprocesses__fields"),
-        pk=process_id,
-        plant=quote.plant,
-        is_active=True,
-    )
+def _plant_materials_payload(quote) -> list[dict]:
+    return [
+        {"id": m.pk, "label": f"{m.code} — {m.name}"}
+        for m in Material.objects.filter(plant=quote.plant, is_active=True).order_by("code")
+    ]
+
+
+def _schema_from_process(process, materials_payload: list[dict] | None = None) -> dict:
+    """Build process schema dict from an already-loaded Process (prefers prefetch cache)."""
     materials = []
     if process.use_material_properties:
-        materials = [
-            {"id": m.pk, "label": f"{m.code} — {m.name}"}
-            for m in Material.objects.filter(plant=quote.plant, is_active=True).order_by("code")
-        ]
-    subs = []
-    for sp in process.subprocesses.filter(is_active=True).order_by("code"):
-        subs.append(
-            {
-                "id": sp.pk,
-                "code": sp.code,
-                "name": sp.name,
-                "result_unit": sp.result_unit,
-                "fields": [_serialize_field(f) for f in sp.fields.all()],
-            }
-        )
+        materials = list(materials_payload) if materials_payload is not None else []
+    # Filter/sort in Python so prefetched M2M does not re-query.
+    active_subs = sorted(
+        (sp for sp in process.subprocesses.all() if sp.is_active),
+        key=lambda sp: sp.code,
+    )
+    subs = [
+        {
+            "id": sp.pk,
+            "code": sp.code,
+            "name": sp.name,
+            "result_unit": sp.result_unit,
+            "fields": [_serialize_field(f) for f in sp.fields.all()],
+        }
+        for sp in active_subs
+    ]
     return {
         "process": {
             "id": process.pk,
@@ -66,6 +69,25 @@ def process_schema(quote, process_id: int) -> dict:
         "materials": materials,
         "subprocesses": subs,
     }
+
+
+def process_schema(
+    quote,
+    process_id: int,
+    *,
+    process=None,
+    materials_payload: list[dict] | None = None,
+) -> dict:
+    if process is None:
+        process = get_object_or_404(
+            Process.objects.prefetch_related("fields", "subprocesses__fields"),
+            pk=process_id,
+            plant=quote.plant,
+            is_active=True,
+        )
+    if process.use_material_properties and materials_payload is None:
+        materials_payload = _plant_materials_payload(quote)
+    return _schema_from_process(process, materials_payload)
 
 
 def material_autofill_values(quote, process_id: int, material_id: int) -> dict:
@@ -92,40 +114,59 @@ def material_autofill_values(quote, process_id: int, material_id: int) -> dict:
     return {"process_fields": process_vals, "subprocess_fields": sub_vals}
 
 
-def quote_process_payload(quote, qp_pk: int) -> dict:
-    qp = get_object_or_404(
-        QuoteProcess.objects.select_related("process", "material").prefetch_related(
-            "field_values",
-            "subprocesses__field_values",
-            "subprocesses__subprocess",
-        ),
-        pk=qp_pk,
-        quote=quote,
+def quote_process_payload(
+    quote,
+    qp_pk: int,
+    *,
+    qp=None,
+    materials_payload: list[dict] | None = None,
+) -> dict:
+    if qp is None:
+        qp = get_object_or_404(
+            QuoteProcess.objects.select_related("process", "material").prefetch_related(
+                "field_values",
+                "subprocesses__field_values",
+                "subprocesses__subprocess",
+                "process__fields",
+                "process__subprocesses__fields",
+            ),
+            pk=qp_pk,
+            quote=quote,
+        )
+    schema = process_schema(
+        quote,
+        qp.process_id,
+        process=qp.process,
+        materials_payload=materials_payload,
     )
-    schema = process_schema(quote, qp.process_id)
     schema["qp_id"] = qp.pk
     schema["material_id"] = qp.material_id
     schema["values"] = {fv.field_code: fv.value for fv in qp.field_values.all()}
-    schema["selected_subprocess_ids"] = [qs.subprocess_id for qs in qp.subprocesses.all()]
+    subprocess_rows = list(qp.subprocesses.all())
+    schema["selected_subprocess_ids"] = [qs.subprocess_id for qs in subprocess_rows]
     schema["subprocess_values"] = {
         str(qs.subprocess_id): {fv.field_code: fv.value for fv in qs.field_values.all()}
-        for qs in qp.subprocesses.all()
+        for qs in subprocess_rows
     }
     return schema
 
 
 def existing_blocks_payload(quote) -> list[dict]:
     """Serialize all quote processes for multi-block editor hydration."""
-    blocks = []
-    for qp in quote.quote_processes.select_related("process", "material").prefetch_related(
+    materials_payload = _plant_materials_payload(quote)
+    qps = quote.quote_processes.select_related("process", "material").prefetch_related(
         "field_values",
         "subprocesses__field_values",
         "subprocesses__subprocess",
         "process__fields",
         "process__subprocesses__fields",
-    ):
-        blocks.append(quote_process_payload(quote, qp.pk))
-    return blocks
+    )
+    return [
+        quote_process_payload(
+            quote, qp.pk, qp=qp, materials_payload=materials_payload
+        )
+        for qp in qps
+    ]
 
 
 def _read_field_values(post, field_defs, prefix: str) -> dict:

@@ -55,7 +55,16 @@ def template_create(request):
 @login_required
 def template_detail(request, pk):
     tmpl = get_object_or_404(
-        ProductTemplate.objects.select_related("family", "plant", "margin_rule"),
+        ProductTemplate.objects.select_related(
+            "family", "plant", "margin_rule"
+        ).prefetch_related(
+            "parameters",
+            "formulas",
+            "bom_items__material",
+            "operations__machine",
+            "operations__labor_role",
+            "cost_elements",
+        ),
         pk=pk,
     )
     can_edit = request.user.is_app_admin and tmpl.status == ProductTemplate.Status.DRAFT

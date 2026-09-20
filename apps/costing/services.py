@@ -239,8 +239,11 @@ def calculate_quote(quote, *, request=None, user=None):
 
     try:
         with transaction.atomic():
-            for line in quote.lines.select_related("template").prefetch_related(
+            for line in quote.lines.select_related(
+                "template", "template__margin_rule"
+            ).prefetch_related(
                 "parameter_values",
+                "template__parameters",
                 "template__formulas",
                 "template__bom_items__material",
                 "template__operations__machine",

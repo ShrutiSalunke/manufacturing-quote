@@ -29,14 +29,15 @@ def build_quote_pdf_context(quote) -> dict:
                 "amount": amount,
             }
         )
+    # One select/prefetch for all processes; avoid per-row .exists() queries.
     for qp in quote.quote_processes.select_related("process").prefetch_related(
         "subprocesses__subprocess"
     ):
         amount = float(qp.computed_total or 0)
         desc = f"{qp.process.code} — {qp.process.name}"
-        if qp.subprocesses.exists():
-            subs = ", ".join(qs.subprocess.code for qs in qp.subprocesses.all())
-            desc = f"{desc} (incl. {subs})"
+        sub_codes = [qs.subprocess.code for qs in qp.subprocesses.all()]
+        if sub_codes:
+            desc = f"{desc} (incl. {', '.join(sub_codes)})"
         lines.append(
             {
                 "description": desc,

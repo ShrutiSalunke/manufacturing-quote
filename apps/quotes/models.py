@@ -31,6 +31,10 @@ class Customer(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["is_active"], name="quotes_cust_is_active_idx"),
+            models.Index(fields=["-created_at", "-id"], name="quotes_cust_created_idx"),
+        ]
 
     def __str__(self):
         label = self.company or self.name
@@ -76,6 +80,12 @@ class Quote(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status"], name="quotes_quote_status_idx"),
+            models.Index(fields=["-created_at"], name="quotes_quote_created_idx"),
+            models.Index(fields=["status", "-created_at"], name="quotes_quote_stat_created_idx"),
+            models.Index(fields=["customer", "-created_at"], name="quotes_quote_cust_created_idx"),
+        ]
 
     def __str__(self):
         return f"{self.number} v{self.version}"

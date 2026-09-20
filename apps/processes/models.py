@@ -52,6 +52,10 @@ class Process(models.Model):
     class Meta:
         unique_together = [("plant", "code")]
         ordering = ["code"]
+        indexes = [
+            models.Index(fields=["is_active"], name="proc_process_is_active_idx"),
+            models.Index(fields=["plant", "is_active"], name="proc_process_plant_active_idx"),
+        ]
 
     def __str__(self):
         return f"{self.code} — {self.name}"
@@ -83,6 +87,10 @@ class SubProcess(models.Model):
         ordering = ["code"]
         verbose_name = "sub process"
         verbose_name_plural = "sub processes"
+        indexes = [
+            models.Index(fields=["is_active"], name="proc_subprocess_is_active_idx"),
+            models.Index(fields=["plant", "is_active"], name="proc_subprocess_plant_act_idx"),
+        ]
 
     def __str__(self):
         return f"{self.code} — {self.name}"
