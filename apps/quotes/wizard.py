@@ -20,6 +20,7 @@ class WizardStep:
 # Order matters. Insert future steps (machines, labor) between processes and preview.
 QUOTE_WIZARD_STEPS: tuple[WizardStep, ...] = (
     WizardStep(id="details", label="Quote details", requires_quote=False),
+    WizardStep(id="weight", label="Weight calculator", requires_quote=True),
     WizardStep(id="processes", label="Processes", requires_quote=True),
     # Future (disabled until wired):
     WizardStep(id="machines", label="Machines", enabled=False, requires_quote=True),

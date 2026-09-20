@@ -3,6 +3,7 @@
 {% block wizard_body %}
 {{ process_options|json_script:"mq-process-options" }}
 {{ existing_blocks|json_script:"mq-existing-blocks" }}
+{{ preferred_material_id|json_script:"mq-preferred-material" }}
 <form method="post" class="mq-wizard-panel" id="mq-wizard-processes-form" novalidate
       data-schema-url="{{ process_schema_url }}"
       data-autofill-url="{{ process_autofill_url }}">

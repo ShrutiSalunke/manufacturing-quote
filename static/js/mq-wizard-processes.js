@@ -90,6 +90,7 @@
     var autofillUrl = form.getAttribute("data-autofill-url");
     var processOptions = readJson("mq-process-options", []);
     var existingBlocks = readJson("mq-existing-blocks", []);
+    var preferredMaterialId = readJson("mq-preferred-material", null);
     var blocksEl = document.getElementById("mq-process-blocks");
     var blockCountInput = document.getElementById("id_block_count");
     var addBtn = document.getElementById("mq-add-process-block");
@@ -199,18 +200,23 @@
           return;
         }
         materialWrap.classList.remove("d-none");
+        var pick = selectedId || preferredMaterialId || "";
         var html = '<option value="">Select material…</option>';
         (schema.materials || []).forEach(function (m) {
           html +=
             '<option value="' +
             m.id +
             '"' +
-            (String(selectedId) === String(m.id) ? " selected" : "") +
+            (String(pick) === String(m.id) ? " selected" : "") +
             ">" +
             escapeHtml(m.label) +
             "</option>";
         });
         materialSelect.innerHTML = html;
+        if (pick && !selectedId) {
+          // Trigger autofill for preferred material from weight step
+          applyAutofill();
+        }
       }
 
       function renderProcessFields(schema, values) {

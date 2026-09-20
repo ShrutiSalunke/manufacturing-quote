@@ -16,10 +16,12 @@ from apps.costing.engine import FormulaError
 from apps.costing.services import calculate_quote
 
 from apps.processes.models import QuoteProcess
+from apps.catalog.models import Material
 from .forms import WIZARD_CLIENT_FIELDS, WizardQuoteDetailsForm
 from .models import Customer, Quote, QuoteCalculationSnapshot
 from .pdf import generate_quote_pdf, render_quote_pdf_bytes, render_quote_pdf_html
 from . import wizard_process
+from . import weight_calculator as weight_calc
 from .wizard import (
     adjacent_step,
     enabled_steps,
@@ -46,7 +48,9 @@ def _wizard_context(step_id, quote=None, **extra):
 
 def _load_quote(quote_pk):
     return get_object_or_404(
-        Quote.objects.select_related("customer", "plant", "calculation").prefetch_related(
+        Quote.objects.select_related(
+            "customer", "plant", "calculation", "weight_material"
+        ).prefetch_related(
             "quote_processes__process",
             "quote_processes__material",
             "quote_processes__field_values",
@@ -110,6 +114,7 @@ def wizard_step(request, quote_pk, step_id):
 def _dispatch_step(request, step_id, quote):
     handlers = {
         "details": _step_details,
+        "weight": _step_weight,
         "processes": _step_processes,
         "preview": _step_preview,
         # Future: "machines": _step_machines, "labor": _step_labor,
@@ -231,6 +236,175 @@ def client_suggest(request):
     return JsonResponse({"results": results})
 
 
+def _metal_options_for_quote(quote):
+    """Active Materials master rows for the quote plant."""
+    options = []
+    for m in Material.objects.filter(plant=quote.plant, is_active=True).order_by("code"):
+        dens = (
+            float(m.density)
+            if m.density is not None
+            else weight_calc.resolve_density(None, m.name, None)
+        )
+        options.append(
+            {
+                "id": m.pk,
+                "label": f"{m.code} — {m.name}",
+                "density": dens,
+                "unit_price": float(m.unit_price or 0),
+            }
+        )
+    return options
+
+
+def _resolve_weight_material(quote, material_id):
+    if not material_id:
+        raise ValueError("Select a material from Materials master.")
+    return get_object_or_404(
+        Material, pk=int(material_id), plant=quote.plant, is_active=True
+    )
+
+
+def _step_weight(request, quote):
+    if quote is None:
+        return wizard_start(request)
+    if not quote.is_editable:
+        messages.error(request, "Issued quotes are locked.")
+        return redirect("quotes:quote_detail", pk=quote.pk)
+
+    if request.method == "POST":
+        action = request.POST.get("wizard_action") or "next"
+        if action == "back":
+            prev = adjacent_step("weight", direction=-1)
+            if prev:
+                return _redirect_to_step(prev.id, quote)
+            return _redirect_to_step("details", quote)
+
+        if action in ("save_weight", "next", "calculate"):
+            shape_id = (request.POST.get("shape_id") or "").strip()
+            if not shape_id and action == "next":
+                # Allow skipping weight calculator
+                nxt = adjacent_step("weight", direction=1)
+                if nxt:
+                    return _redirect_to_step(nxt.id, quote)
+                return redirect("quotes:quote_detail", pk=quote.pk)
+
+            try:
+                material_id = (request.POST.get("material_id") or "").strip()
+                material = _resolve_weight_material(quote, material_id)
+                density = weight_calc.resolve_density(
+                    material.density,
+                    material.name,
+                    request.POST.get("density"),
+                )
+
+                # Collect dimensions / units from POST
+                shape = weight_calc.SHAPE_BY_ID.get(shape_id)
+                if not shape:
+                    raise ValueError("Select a raw material shape.")
+                dimensions = {}
+                units = {}
+                for f in shape["fields"]:
+                    key = f["key"]
+                    dimensions[key] = request.POST.get(f"dim_{key}", "")
+                    units[key] = request.POST.get(f"unit_{key}", "mm")
+
+                mode = request.POST.get("mode") or "by_length"
+                pieces = request.POST.get("pieces") or 1
+                price = request.POST.get("price_per_kg") or 0
+                target_weight = request.POST.get("target_weight_kg") or None
+
+                result = weight_calc.calculate(
+                    shape_id=shape_id,
+                    density=density,
+                    mode=mode,
+                    pieces=pieces,
+                    price_per_kg=price,
+                    dimensions=dimensions,
+                    units=units,
+                    target_weight_kg=float(target_weight) if target_weight not in (None, "") else None,
+                )
+
+                quote.weight_shape = shape_id
+                quote.weight_material = material
+                quote.weight_calc_data = {
+                    "metal_label": material.name,
+                    "material_id": material.pk,
+                    "density": density,
+                    "mode": mode,
+                    "pieces": float(pieces),
+                    "price_per_kg": float(price or 0),
+                    "dimensions": dimensions,
+                    "units": units,
+                    "target_weight_kg": target_weight,
+                    "result": result,
+                }
+                quote.save(
+                    update_fields=[
+                        "weight_shape",
+                        "weight_material",
+                        "weight_calc_data",
+                        "updated_at",
+                    ]
+                )
+
+                if action == "calculate":
+                    return _redirect_to_step("weight", quote)
+
+                if action == "save_weight":
+                    messages.success(request, "Weight calculation saved.")
+                    return _redirect_to_step("weight", quote)
+
+                nxt = adjacent_step("weight", direction=1)
+                if nxt:
+                    return _redirect_to_step(nxt.id, quote)
+                return redirect("quotes:quote_detail", pk=quote.pk)
+
+            except ValueError as exc:
+                messages.error(request, str(exc))
+                return _render_weight_step(request, quote)
+            except Exception as exc:
+                messages.error(request, f"Could not calculate weight: {exc}")
+                return _render_weight_step(request, quote)
+
+        if action == "clear_weight":
+            quote.weight_shape = ""
+            quote.weight_material = None
+            quote.weight_calc_data = {}
+            quote.save(
+                update_fields=[
+                    "weight_shape",
+                    "weight_material",
+                    "weight_calc_data",
+                    "updated_at",
+                ]
+            )
+            messages.success(request, "Weight calculator cleared.")
+            return _redirect_to_step("weight", quote)
+
+        return _redirect_to_step("weight", quote)
+
+    return _render_weight_step(request, quote)
+
+
+def _render_weight_step(request, quote):
+    quote = _load_quote(quote.pk)
+    data = quote.weight_calc_data or {}
+    return render(
+        request,
+        "quotes/wizard/step_weight.html",
+        _wizard_context(
+            "weight",
+            quote=quote,
+            page_title=f"Weight calculator — {quote.number}",
+            shapes=weight_calc.SHAPES,
+            metal_options=_metal_options_for_quote(quote),
+            saved_shape=quote.weight_shape or data.get("result", {}).get("shape_id", ""),
+            saved_data=data,
+            preferred_material_id=quote.weight_material_id,
+        ),
+    )
+
+
 def _step_processes(request, quote):
     if quote is None:
         return wizard_start(request)
@@ -309,6 +483,7 @@ def _render_processes_step(request, quote, keep_post=False):
             process_autofill_url=reverse(
                 "quotes:wizard_process_autofill", kwargs={"quote_pk": quote.pk}
             ),
+            preferred_material_id=quote.weight_material_id,
         ),
     )
 

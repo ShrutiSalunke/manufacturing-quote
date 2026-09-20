@@ -63,6 +63,16 @@ class Quote(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     issued_at = models.DateTimeField(null=True, blank=True)
+    # Weight calculator (wizard step) — optional; feeds preferred material into Processes.
+    weight_shape = models.SlugField(max_length=40, blank=True, default="")
+    weight_material = models.ForeignKey(
+        "catalog.Material",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="weight_quotes",
+    )
+    weight_calc_data = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

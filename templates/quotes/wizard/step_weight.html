@@ -1,0 +1,144 @@
+{% extends "quotes/wizard/base_wizard.html" %}
+{% load static %}
+{% block wizard_body %}
+{{ shapes|json_script:"mq-weight-shapes" }}
+{{ metal_options|json_script:"mq-metal-options" }}
+{{ saved_data|json_script:"mq-weight-saved" }}
+{{ saved_shape|json_script:"mq-weight-saved-shape" }}
+
+<form method="post" class="mq-wizard-panel mq-weight-panel" id="mq-wizard-weight-form" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="shape_id" id="id_shape_id" value="{{ saved_shape }}">
+  <input type="hidden" name="material_id" id="id_material_id" value="">
+  <input type="hidden" name="preset_name" id="id_preset_name" value="">
+  <input type="hidden" name="metal_label" id="id_metal_label" value="">
+
+  <div id="mq-weight-picker" class="{% if saved_shape %}d-none{% endif %}">
+    <h3 class="mq-wizard-section-title mb-3">Select raw material</h3>
+    <div class="mq-weight-grid">
+      {% for s in shapes %}
+      <button type="button" class="mq-weight-shape-card" data-shape-id="{{ s.id }}" data-shape-label="{{ s.label }}">
+        <span class="mq-weight-shape-icon" data-icon="{{ s.diagram }}" aria-hidden="true"></span>
+        <span class="mq-weight-shape-label">{{ s.label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id="mq-weight-calc" class="{% if not saved_shape %}d-none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="mq-weight-change-shape">← Change shape</button>
+      <h3 class="mq-wizard-section-title mb-0" id="mq-weight-shape-title">
+        {% if saved_shape %}{{ saved_data.result.shape_label|default:saved_shape }}{% endif %}
+      </h3>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="mq-weight-diagram-card" id="mq-weight-diagram" aria-hidden="true"></div>
+      </div>
+      <div class="col-md-8">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="id_metal_select">Material</label>
+            <select class="form-select" id="id_metal_select"></select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="id_density">Density</label>
+            <div class="input-group">
+              <input type="number" step="any" class="form-control mq-input" name="density" id="id_density" value="7.85">
+              <span class="input-group-text">g/cm³</span>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="mq-weight-mode">
+              <label class="mq-weight-mode-opt">
+                <input type="radio" name="mode" value="by_length" checked> By Length
+              </label>
+              <label class="mq-weight-mode-opt">
+                <input type="radio" name="mode" value="by_weight"> By Weight
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-weight-dim-card">
+      <h3 class="mq-wizard-section-title mb-3">Dimension</h3>
+      <div id="mq-weight-dim-fields" class="row g-3"></div>
+      <hr class="mq-wizard-divider">
+      <div class="row g-3">
+        <div class="col-md-4 d-none" id="mq-target-weight-wrap">
+          <label class="form-label" for="id_target_weight_kg">Target weight</label>
+          <div class="input-group">
+            <input type="number" step="any" class="form-control mq-input" name="target_weight_kg" id="id_target_weight_kg">
+            <span class="input-group-text">kg</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="id_pieces">Pieces</label>
+          <input type="number" step="any" min="0" class="form-control mq-input" name="pieces" id="id_pieces" value="1">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="id_price_per_kg">Price Per kg</label>
+          <input type="number" step="any" min="0" class="form-control mq-input" name="price_per_kg" id="id_price_per_kg" value="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-weight-result mt-3{% if not saved_data.result %} d-none{% endif %}" id="mq-weight-result">
+      <div class="mq-weight-result-grid">
+        <div class="mq-weight-result-item">
+          <div class="mq-weight-result-label">Total weight (kg)</div>
+          <div class="mq-weight-result-value" id="mq-res-total">
+            {% if saved_data.result %}{{ saved_data.result.weight_kg_total }}{% endif %}
+          </div>
+        </div>
+        <div class="mq-weight-result-item">
+          <div class="mq-weight-result-label">Weight / pc (kg)</div>
+          <div class="mq-weight-result-value" id="mq-res-one">
+            {% if saved_data.result %}{{ saved_data.result.weight_kg_one }}{% endif %}
+          </div>
+        </div>
+        <div class="mq-weight-result-item">
+          <div class="mq-weight-result-label">Cost ({{ quote.currency }})</div>
+          <div class="mq-weight-result-value" id="mq-res-cost">
+            {% if saved_data.result %}{{ saved_data.result.total_cost }}{% else %}—{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-weight-actions mt-3">
+      <button class="btn btn-dark" type="submit" name="wizard_action" value="clear_weight">Clear</button>
+      <button class="btn mq-btn-theme" type="submit" name="wizard_action" value="save_weight">Save</button>
+      <button class="btn btn-outline-dark" type="submit" name="wizard_action" value="calculate">Calculate</button>
+    </div>
+  </div>
+
+  <div class="mq-wizard-actions">
+    <button class="btn btn-outline-secondary" type="submit" name="wizard_action" value="back">Back</button>
+    <div class="mq-wizard-actions-right">
+      <button class="btn mq-btn-theme" type="submit" name="wizard_action" value="next" id="mq-weight-next">
+        Continue to Processes
+      </button>
+    </div>
+  </div>
+</form>
+
+<script src="{% static 'js/mq-wizard-weight.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.MQWizardWeight) {
+      var shapeNode = document.getElementById("mq-weight-saved-shape");
+      var savedShape = "";
+      try { savedShape = shapeNode ? JSON.parse(shapeNode.textContent) : ""; } catch (e) {}
+      window.MQWizardWeight.init({
+        formId: "mq-wizard-weight-form",
+        savedShape: savedShape || ""
+      });
+    }
+  });
+</script>
+{% endblock %}
