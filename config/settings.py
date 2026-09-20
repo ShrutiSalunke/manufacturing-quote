@@ -97,6 +97,14 @@ if DATABASE_URL:
         "true",
         "yes",
     )
+    # Windows/Python often lacks a CA bundle; point libpq at certifi for Supabase/Render SSL.
+    if ssl_required and not os.getenv("SSL_CERT_FILE"):
+        try:
+            import certifi
+
+            os.environ["SSL_CERT_FILE"] = certifi.where()
+        except ImportError:
+            pass
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,

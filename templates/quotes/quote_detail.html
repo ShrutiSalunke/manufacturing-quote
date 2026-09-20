@@ -163,6 +163,99 @@
       </div>
     </div>
 
+    {# —— Weight calculator —— #}
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <div class="mq-collapse-toggle-row">
+        <button
+          class="mq-collapse-toggle"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mq-weight-section"
+          aria-expanded="true"
+          aria-controls="mq-weight-section"
+        >
+          <span class="mq-form-section-title mb-0">Weight calculator</span>
+          <span class="mq-collapse-chevron" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        {% if quote.is_editable %}
+        <a class="btn btn-sm mq-btn-theme mq-collapse-action" href="{% url 'quotes:wizard_step' quote.pk 'weight' %}">Edit weight</a>
+        {% endif %}
+      </div>
+      <div id="mq-weight-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          {% if quote.weight_shape or weight_result %}
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Shape</div>
+              <div class="mq-detail-value">{{ weight_shape_label|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Material</div>
+              <div class="mq-detail-value">
+                {% if quote.weight_material %}
+                  {{ quote.weight_material.code }} — {{ quote.weight_material.name }}
+                {% else %}
+                  {{ weight_data.metal_label|default:"—" }}
+                {% endif %}
+              </div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Mode</div>
+              <div class="mq-detail-value">
+                {% if weight_data.mode == 'by_weight' %}By weight{% else %}By length{% endif %}
+              </div>
+            </div>
+            {% if weight_data.pieces %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Pieces</div>
+              <div class="mq-detail-value">{{ weight_data.pieces }}</div>
+            </div>
+            {% endif %}
+            {% if weight_data.density %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Density</div>
+              <div class="mq-detail-value">{{ weight_data.density }} g/cm³</div>
+            </div>
+            {% endif %}
+            {% if weight_result.weight_kg_total is not None %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Total weight</div>
+              <div class="mq-detail-value"><strong>{{ weight_result.weight_kg_total }}</strong> kg</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Weight / pc</div>
+              <div class="mq-detail-value">{{ weight_result.weight_kg_one }} kg</div>
+            </div>
+            {% endif %}
+            {% if weight_result.total_cost is not None %}
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Material cost</div>
+              <div class="mq-detail-value">{{ weight_result.total_cost }} {{ quote.currency }}</div>
+            </div>
+            {% endif %}
+          </div>
+          {% if weight_dimensions %}
+          <div class="mt-3">
+            <div class="mq-detail-label mb-2">Dimensions</div>
+            <div class="mq-detail-grid">
+              {% for dim in weight_dimensions %}
+              <div class="mq-detail-item">
+                <div class="mq-detail-label">{{ dim.label }}</div>
+                <div class="mq-detail-value">{{ dim.value }} {{ dim.unit }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% else %}
+          <p class="text-muted small mb-0">No weight calculation saved. Use Continue wizard to add one.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
     {# —— Processes —— #}
     <div class="mq-master-card mq-detail-card mq-collapse-card">
       <div class="mq-collapse-toggle-row">

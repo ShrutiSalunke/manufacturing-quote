@@ -15,3 +15,5 @@ staticfiles/
 dist/
 build/
 PUSH_COMMANDS.txt
+
+data_sqlite_backup.json

@@ -407,6 +407,10 @@
   flex-shrink: 0;
 }
 
+.mq-collapse-toggle-row:has(.mq-collapse-toggle.collapsed) .mq-collapse-action {
+  display: none;
+}
+
 .mq-collapse-card .mq-form-section-last {
   border-bottom: 0;
 }

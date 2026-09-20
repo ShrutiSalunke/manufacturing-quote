@@ -15,6 +15,7 @@ from apps.templates_engine.models import ProductTemplate
 from .forms import CustomerForm, QuoteForm, QuoteLineForm, QuoteLineParametersForm
 from .models import Customer, Quote, QuoteDocument, QuoteLine, QuoteLineParameterValue
 from .pdf import generate_quote_pdf
+from . import weight_calculator as weight_calc
 
 CLIENT_PER_PAGE_CHOICES = (10, 15, 25, 50)
 CLIENT_DEFAULT_PER_PAGE = 15
@@ -263,7 +264,9 @@ def quote_create(request):
 @login_required
 def quote_detail(request, pk):
     quote = get_object_or_404(
-        Quote.objects.select_related("customer", "plant", "calculation").prefetch_related(
+        Quote.objects.select_related(
+            "customer", "plant", "calculation", "weight_material"
+        ).prefetch_related(
             "quote_processes__process",
             "quote_processes__material",
             "quote_processes__field_values",
@@ -274,7 +277,37 @@ def quote_detail(request, pk):
         ),
         pk=pk,
     )
-    return render(request, "quotes/quote_detail.html", {"quote": quote})
+    weight_data = quote.weight_calc_data or {}
+    weight_result = weight_data.get("result") or {}
+    shape_id = quote.weight_shape or weight_result.get("shape_id") or ""
+    shape = weight_calc.SHAPE_BY_ID.get(shape_id)
+    dims = weight_data.get("dimensions") or {}
+    units = weight_data.get("units") or {}
+    field_labels = {f["key"]: f["label"] for f in (shape["fields"] if shape else [])}
+    weight_dimensions = [
+        {
+            "label": field_labels.get(key, key),
+            "value": val,
+            "unit": units.get(key, "mm"),
+        }
+        for key, val in dims.items()
+    ]
+    return render(
+        request,
+        "quotes/quote_detail.html",
+        {
+            "quote": quote,
+            "weight_shape_label": (
+                (shape["label"] if shape else "")
+                or weight_result.get("shape_label")
+                or shape_id
+                or ""
+            ),
+            "weight_data": weight_data,
+            "weight_result": weight_result,
+            "weight_dimensions": weight_dimensions,
+        },
+    )
 
 
 @login_required
