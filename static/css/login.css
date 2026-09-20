@@ -1,0 +1,248 @@
+/* Login — mustard / charcoal, matches app chrome */
+
+.mq-login {
+  --mq-login-mustard: #f5c518;
+  --mq-login-charcoal: #111827;
+  --mq-login-muted: #6b7280;
+  --mq-login-border: #e5e7eb;
+  --mq-login-canvas: #eceff3;
+  --mq-login-font: "Manrope", "Segoe UI", sans-serif;
+
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  font-family: var(--mq-login-font);
+  color: var(--mq-login-charcoal);
+  background: var(--mq-login-canvas);
+}
+
+/* —— Brand panel —— */
+.mq-login-brand {
+  position: relative;
+  overflow: hidden;
+  background: var(--mq-login-charcoal);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: clamp(2rem, 6vw, 4.5rem);
+  animation: mq-login-brand-in 0.55s ease both;
+}
+
+.mq-login-brand-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 28rem;
+}
+
+.mq-login-mark {
+  width: 2.75rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--mq-login-mustard);
+  margin-bottom: 1.35rem;
+}
+
+.mq-login-eyebrow {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.mq-login-brand-title {
+  margin: 0;
+  font-size: clamp(1.85rem, 3.2vw, 2.65rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.mq-login-brand-tag {
+  margin: 1rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+  max-width: 22rem;
+  line-height: 1.45;
+}
+
+.mq-login-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 70% 80%, #000 20%, transparent 70%);
+  pointer-events: none;
+}
+
+.mq-login-brand::after {
+  content: "";
+  position: absolute;
+  width: 22rem;
+  height: 22rem;
+  right: -6rem;
+  bottom: -8rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 197, 24, 0.18), transparent 68%);
+  pointer-events: none;
+}
+
+/* —— Form side —— */
+.mq-login-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.mq-login-card {
+  width: 100%;
+  max-width: 26rem;
+  background: #fff;
+  border: 1px solid var(--mq-login-border);
+  border-radius: 0.85rem;
+  padding: 1.75rem 1.75rem 1.5rem;
+  border-bottom: 3px solid var(--mq-login-mustard);
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.06);
+  animation: mq-login-card-in 0.5s ease 0.08s both;
+}
+
+.mq-login-heading {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.mq-login-sub {
+  margin: 0.4rem 0 1.35rem;
+  color: var(--mq-login-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.mq-login-alert {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.55rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.mq-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mq-login-label {
+  margin-top: 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.mq-login-input {
+  height: 2.7rem;
+  padding: 0 0.85rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 0.55rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--mq-login-charcoal);
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mq-login-input:focus {
+  outline: none;
+  border-color: var(--mq-login-charcoal);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.35);
+}
+
+.mq-login-submit {
+  margin-top: 1.15rem;
+  height: 2.75rem;
+  border: 1px solid var(--mq-login-mustard);
+  border-radius: 0.65rem;
+  background: var(--mq-login-mustard);
+  color: var(--mq-login-charcoal);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.mq-login-submit:hover,
+.mq-login-submit:focus {
+  background: #e5b40f;
+  border-color: #e5b40f;
+}
+
+.mq-login-submit:active {
+  transform: translateY(1px);
+}
+
+.mq-login-hint {
+  margin: 1.15rem 0 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+@keyframes mq-login-brand-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mq-login-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mq-login-brand,
+  .mq-login-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .mq-login {
+    grid-template-columns: 1fr;
+  }
+
+  .mq-login-brand {
+    min-height: 34vh;
+    padding: 2rem 1.5rem;
+  }
+
+  .mq-login-brand-title {
+    font-size: 1.75rem;
+  }
+
+  .mq-login-main {
+    padding: 1.5rem 1.15rem 2.25rem;
+    align-items: flex-start;
+  }
+}

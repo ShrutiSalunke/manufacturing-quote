@@ -1,28 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Login{% endblock %}
+{% load static %}
+{% block title %}Sign in{% endblock %}
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="{% static 'css/login.css' %}" rel="stylesheet">
+{% endblock %}
 {% block unauthenticated %}
-<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg,#0f6b5c 0%,#12353a 100%);">
-  <div class="card shadow-lg" style="width: 100%; max-width: 420px;">
-    <div class="card-body p-4">
-      <h1 class="h4 mb-1">{{ COMPANY_NAME }}</h1>
-      <p class="text-muted mb-4">Manufacturing Quote Costing</p>
-      {% if form.errors %}
-        <div class="alert alert-danger">Invalid username/email or password.</div>
-      {% endif %}
-      <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-          <label class="form-label">Username</label>
-          <input type="text" name="username" class="form-control" autofocus required value="{{ form.username.value|default:'' }}">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-          <input type="password" name="password" class="form-control" required>
-        </div>
-        <button class="btn btn-success w-100" type="submit">Sign in</button>
-      </form>
-      <p class="small text-muted mt-3 mb-0">Demo: admin@example.com / Admin123!</p>
+<div class="mq-login">
+  <aside class="mq-login-brand" aria-hidden="false">
+    <div class="mq-login-brand-inner">
+      <div class="mq-login-mark" aria-hidden="true"></div>
+      <p class="mq-login-eyebrow">Quote Costing</p>
+      <h1 class="mq-login-brand-title">{{ COMPANY_NAME }}</h1>
+      <p class="mq-login-brand-tag">Cost quotes with confidence.</p>
     </div>
-  </div>
+    <div class="mq-login-grid" aria-hidden="true"></div>
+  </aside>
+
+  <main class="mq-login-main">
+    <div class="mq-login-card">
+      <h2 class="mq-login-heading">Sign in</h2>
+      <p class="mq-login-sub">Use your work account to open the quote workspace.</p>
+
+      {% if form.errors %}
+      <div class="mq-login-alert" role="alert">Invalid email/username or password.</div>
+      {% endif %}
+
+      <form method="post" class="mq-login-form" novalidate>
+        {% csrf_token %}
+        <label class="mq-login-label" for="id_username">Email or username</label>
+        <input
+          id="id_username"
+          type="text"
+          name="username"
+          class="mq-login-input"
+          autocomplete="username"
+          autofocus
+          required
+          value="{{ form.username.value|default:'' }}"
+        >
+
+        <label class="mq-login-label" for="id_password">Password</label>
+        <input
+          id="id_password"
+          type="password"
+          name="password"
+          class="mq-login-input"
+          autocomplete="current-password"
+          required
+        >
+
+        <button class="mq-login-submit" type="submit">Sign in</button>
+      </form>
+
+      <p class="mq-login-hint">Demo: admin@example.com / Admin123!</p>
+    </div>
+  </main>
 </div>
 {% endblock %}
