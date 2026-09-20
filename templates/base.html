@@ -21,17 +21,18 @@
       <line x1="4" y1="17" x2="20" y2="17"></line>
     </svg>
   </button>
+  <div class="app-topbar-brand">
+    <div class="app-topbar-brand-title">{{ COMPANY_NAME }}</div>
+    <div class="app-topbar-brand-sub">Quote Costing</div>
+  </div>
   <div class="app-topbar-spacer"></div>
   <div class="dropdown app-topbar-user">
-    <button class="app-user-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <button class="app-user-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
       <span class="app-user-avatar" aria-hidden="true">{{ user.email|default:user.username|make_list|first|upper }}</span>
-      <span class="app-user-meta">
-        <span class="app-user-name">{{ user.get_full_name|default:user.email|default:user.username }}</span>
-        <span class="app-user-role">{{ user.role }}</span>
-      </span>
     </button>
     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-      <li><h6 class="dropdown-header">{{ user.email|default:user.username }}</h6></li>
+      <li><h6 class="dropdown-header">{{ user.get_full_name|default:user.email|default:user.username }}</h6></li>
+      <li><span class="dropdown-item-text text-muted small">{{ user.role }}</span></li>
       <li><hr class="dropdown-divider"></li>
       <li>
         <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
@@ -44,19 +45,6 @@
 
 <div class="d-flex" id="app-shell">
   <nav class="sidebar" id="sidebar" aria-label="Main">
-    <div class="sidebar-brand">
-      <span class="sidebar-logo" aria-hidden="true" title="{{ COMPANY_NAME }}">
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-          <path d="M16 2l12 7v14l-12 7L4 23V9l12-7z" fill="#111827"/>
-          <path d="M11 14h10v10H11V14z" fill="#f59e0b"/>
-        </svg>
-      </span>
-      <div class="sidebar-brand-text">
-        <div class="sidebar-brand-title">{{ COMPANY_NAME }}</div>
-        <div class="sidebar-brand-sub">Quote Costing</div>
-      </div>
-    </div>
-
     <ul class="sidebar-nav">
       <li>
         <a class="sidebar-link {% if ns == 'core' %}is-active{% endif %}" href="{% url 'core:dashboard' %}" data-tour="nav-dashboard" title="Dashboard">

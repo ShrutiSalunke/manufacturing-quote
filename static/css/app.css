@@ -1,14 +1,14 @@
 :root {
-  --mq-sidebar-width: 260px;
+  --mq-sidebar-width: 248px;
   --mq-sidebar-collapsed-width: 72px;
-  --mq-topbar-height: 56px;
+  --mq-topbar-height: 60px;
   --mq-accent: #0f6b5c;
   --mq-bg: #eceff3;
-  --mq-topbar-bg: #1f1f1f;
-  --mq-sidebar-bg: #f3f4f6;
+  --mq-topbar-bg: #111827;
+  --mq-sidebar-bg: #ffffff;
   --mq-sidebar-active: #f5c518;
-  --mq-nav-text: #111827;
-  --mq-nav-muted: #6b7280;
+  --mq-nav-text: #374151;
+  --mq-nav-muted: #9ca3af;
 }
 
 html, body {
@@ -35,27 +35,51 @@ body.mq-app {
   color: #fff;
   display: flex;
   align-items: center;
-  padding: 0 1rem;
-  gap: 0.75rem;
+  padding: 0 1.15rem;
+  gap: 0.85rem;
 }
 
 .app-topbar-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 0.45rem;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 0;
+  border-radius: 0.5rem;
   background: transparent;
   color: #fff;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .app-topbar-toggle:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.app-topbar-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.app-topbar-brand-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(42vw, 280px);
+}
+
+.app-topbar-brand-sub {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
 }
 
 .app-topbar-spacer {
@@ -65,49 +89,29 @@ body.mq-app {
 .app-user-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.35rem;
   border: 0;
   background: transparent;
   color: #fff;
-  padding: 0.25rem 0.35rem;
+  padding: 0.15rem;
 }
 
 .app-user-btn::after {
-  margin-left: 0.15rem;
-  opacity: 0.75;
+  margin-left: 0.2rem;
+  opacity: 0.55;
 }
 
 .app-user-avatar {
-  width: 2rem;
-  height: 2rem;
+  width: 2.15rem;
+  height: 2.15rem;
   border-radius: 999px;
   background: #f5c518;
-  color: #111;
+  color: #111827;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-.app-user-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.15;
-  text-align: left;
-}
-
-.app-user-name {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.app-user-role {
-  font-size: 0.7rem;
-  opacity: 0.7;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 /* —— Shell —— */
@@ -128,39 +132,11 @@ body.mq-app {
   flex-shrink: 0;
   background: var(--mq-sidebar-bg);
   color: var(--mq-nav-text);
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid #e8eaed;
   display: flex;
   flex-direction: column;
-  padding: 1rem 0.85rem;
+  padding: 1rem 0.75rem;
   transition: width 0.2s ease, padding 0.2s ease;
-}
-
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.35rem 0.5rem 1rem;
-  flex-shrink: 0;
-}
-
-.sidebar-logo {
-  display: inline-flex;
-  flex-shrink: 0;
-}
-
-.sidebar-brand-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  line-height: 1.2;
-  max-width: 150px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sidebar-brand-sub {
-  font-size: 0.7rem;
-  color: var(--mq-nav-muted);
 }
 
 .sidebar-nav {
@@ -172,13 +148,13 @@ body.mq-app {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 
 .sidebar-group {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.1rem;
 }
 
 .sidebar-section-toggle {
@@ -189,18 +165,18 @@ body.mq-app {
   border: 0;
   background: transparent;
   color: var(--mq-nav-muted);
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 0.75rem 0.75rem 0.35rem;
+  letter-spacing: 0.07em;
+  padding: 0.85rem 0.85rem 0.3rem;
   cursor: pointer;
-  border-radius: 0.5rem;
+  border-radius: 0.55rem;
 }
 
 .sidebar-section-toggle:hover {
-  color: var(--mq-nav-text);
-  background: rgba(17, 24, 39, 0.04);
+  color: #6b7280;
+  background: #f9fafb;
 }
 
 .sidebar-chevron {
@@ -218,7 +194,7 @@ body.mq-app {
   padding: 0;
   display: none;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.1rem;
 }
 
 .sidebar-group.is-open > .sidebar-subnav {
@@ -234,8 +210,8 @@ body.mq-app {
   background: transparent;
   color: var(--mq-nav-text);
   text-decoration: none;
-  border-radius: 0.65rem;
-  padding: 0.6rem 0.75rem;
+  border-radius: 0.7rem;
+  padding: 0.62rem 0.85rem;
   font-size: 0.9rem;
   font-weight: 500;
   text-align: left;
@@ -243,21 +219,27 @@ body.mq-app {
 }
 
 .sidebar-link:hover {
-  background: rgba(17, 24, 39, 0.06);
-  color: var(--mq-nav-text);
+  background: #f3f4f6;
+  color: #111827;
   text-decoration: none;
 }
 
 .sidebar-link.is-active {
   background: var(--mq-sidebar-active);
-  color: #111;
+  color: #111827;
   font-weight: 700;
+}
+
+.sidebar-link.is-active .sidebar-icon {
+  opacity: 1;
+  color: #111827;
 }
 
 .sidebar-icon {
   display: inline-flex;
   flex-shrink: 0;
-  opacity: 0.9;
+  color: #6b7280;
+  opacity: 1;
 }
 
 .sidebar-label {
@@ -270,10 +252,14 @@ body.mq-app {
   flex-shrink: 0;
   padding-top: 0.75rem;
   margin-top: 0.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #eef0f3;
 }
 
 .sidebar-logout {
+  color: #b91c1c;
+}
+
+.sidebar-logout .sidebar-icon {
   color: #b91c1c;
 }
 
@@ -292,12 +278,6 @@ body.mq-app {
   padding: 0.85rem 0.55rem;
 }
 
-#app-shell.sidebar-collapsed .sidebar-brand {
-  justify-content: center;
-  padding: 0.35rem 0 0.85rem;
-}
-
-#app-shell.sidebar-collapsed .sidebar-brand-text,
 #app-shell.sidebar-collapsed .sidebar-label,
 #app-shell.sidebar-collapsed .sidebar-section-label,
 #app-shell.sidebar-collapsed .sidebar-chevron {
@@ -528,8 +508,12 @@ pre.trace {
 }
 
 @media (max-width: 768px) {
-  .app-user-meta {
+  .app-topbar-brand-sub {
     display: none;
+  }
+
+  .app-topbar-brand-title {
+    max-width: 46vw;
   }
 
   .app-content {

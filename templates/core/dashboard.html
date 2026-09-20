@@ -1,32 +1,220 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Dashboard{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+<link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
 {% block breadcrumb %}Dashboard{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4" data-tour="nav-dashboard">
-  <div>
-    <h1 class="h3 mb-1">Dashboard</h1>
-    <p class="text-muted mb-0">Import masters → configure processes → quote → PDF</p>
-  </div>
-  <div class="d-flex gap-2">
-    <a class="btn btn-outline-primary" href="{% url 'imports_excel:hub' %}">Imports</a>
-    <a class="btn btn-success" href="{% url 'quotes:quote_create' %}">New Quote</a>
-  </div>
+<div class="mq-dash" data-tour="nav-dashboard">
+  {# —— Hero —— #}
+  <section class="mq-dash-hero mq-dash-enter">
+    <div class="mq-dash-hero-copy">
+      <h1 class="mq-dash-hero-title">{{ greeting }}, {{ greeting_name }}</h1>
+      <p class="mq-dash-hero-sub">Quote costing for {{ company_name }}</p>
+    </div>
+    <div class="mq-dash-hero-actions">
+      <a class="mq-dash-btn mq-dash-btn-primary" href="{% url 'quotes:quote_create' %}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+          <path d="M12 5v14"/><path d="M5 12h14"/>
+        </svg>
+        <span>New Quote</span>
+      </a>
+      <a class="mq-dash-btn mq-dash-btn-secondary" href="{% url 'imports_excel:hub' %}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span>Imports</span>
+      </a>
+    </div>
+  </section>
+
+  {# —— Quote pulse —— #}
+  <section class="mq-dash-pulse mq-dash-enter" style="--mq-dash-delay: 60ms">
+    <a class="mq-dash-pulse-card is-draft" href="{% url 'quotes:quote_list' %}?status=DRAFT">
+      <span class="mq-dash-pulse-badge">Draft</span>
+      <div class="mq-dash-pulse-value" data-mq-count="{{ draft_count }}">{{ draft_count }}</div>
+      <div class="mq-dash-pulse-label">In progress quotes</div>
+      <span class="mq-dash-pulse-link">View all drafts →</span>
+    </a>
+    <a class="mq-dash-pulse-card is-calculated" href="{% url 'quotes:quote_list' %}?status=CALCULATED">
+      <span class="mq-dash-pulse-badge">Calculated</span>
+      <div class="mq-dash-pulse-value" data-mq-count="{{ calculated_count }}">{{ calculated_count }}</div>
+      <div class="mq-dash-pulse-label">Quotes with costs</div>
+      <span class="mq-dash-pulse-link">View all calculated →</span>
+    </a>
+    <a class="mq-dash-pulse-card is-issued" href="{% url 'quotes:quote_list' %}?status=ISSUED">
+      <span class="mq-dash-pulse-badge">Issued</span>
+      <div class="mq-dash-pulse-value" data-mq-count="{{ issued_count }}">{{ issued_count }}</div>
+      <div class="mq-dash-pulse-label">Issued to clients</div>
+      <span class="mq-dash-pulse-link">View all issued →</span>
+    </a>
+  </section>
+
+  {# —— Catalog readiness —— #}
+  <section class="mq-dash-catalog mq-dash-enter" style="--mq-dash-delay: 120ms">
+    <a class="mq-dash-cat-card" href="{% url 'catalog:material_list' %}">
+      <span class="mq-dash-cat-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+      </span>
+      <span class="mq-dash-cat-label">Materials</span>
+      <span class="mq-dash-cat-count" data-mq-count="{{ material_count }}">{{ material_count }}</span>
+      <span class="mq-dash-cat-dot{% if material_count %} is-ready{% endif %}" aria-hidden="true"></span>
+    </a>
+    <a class="mq-dash-cat-card" href="{% url 'catalog:machine_list' %}">
+      <span class="mq-dash-cat-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="2" y="7" width="20" height="12" rx="2"/><path d="M6 12h.01"/><path d="M10 12h6"/><path d="M17 7V5a1 1 0 0 0-1-1h-2"/></svg>
+      </span>
+      <span class="mq-dash-cat-label">Machines</span>
+      <span class="mq-dash-cat-count" data-mq-count="{{ machine_count }}">{{ machine_count }}</span>
+      <span class="mq-dash-cat-dot{% if machine_count %} is-ready{% endif %}" aria-hidden="true"></span>
+    </a>
+    <a class="mq-dash-cat-card" href="{% url 'catalog:labor_list' %}">
+      <span class="mq-dash-cat-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </span>
+      <span class="mq-dash-cat-label">Labor</span>
+      <span class="mq-dash-cat-count" data-mq-count="{{ labor_count }}">{{ labor_count }}</span>
+      <span class="mq-dash-cat-dot{% if labor_count %} is-ready{% endif %}" aria-hidden="true"></span>
+    </a>
+    <a class="mq-dash-cat-card" href="{% url 'processes:process_list' %}">
+      <span class="mq-dash-cat-icon is-accent" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.9 4.9l1.4 1.4"/><path d="M17.7 17.7l1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.9 19.1l1.4-1.4"/><path d="M17.7 6.3l1.4-1.4"/></svg>
+      </span>
+      <span class="mq-dash-cat-label">Processes</span>
+      <span class="mq-dash-cat-count" data-mq-count="{{ process_count }}">{{ process_count }}</span>
+      <span class="mq-dash-cat-dot{% if process_count %} is-ready{% endif %}" aria-hidden="true"></span>
+    </a>
+    <a class="mq-dash-cat-card" href="{% url 'processes:subprocess_list' %}">
+      <span class="mq-dash-cat-icon is-accent" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+      </span>
+      <span class="mq-dash-cat-label">Sub Processes</span>
+      <span class="mq-dash-cat-count" data-mq-count="{{ subprocess_count }}">{{ subprocess_count }}</span>
+      <span class="mq-dash-cat-dot{% if subprocess_count %} is-ready{% endif %}" aria-hidden="true"></span>
+    </a>
+    <a class="mq-dash-cat-card" href="{% url 'quotes:client_list' %}">
+      <span class="mq-dash-cat-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      </span>
+      <span class="mq-dash-cat-label">Clients</span>
+      <span class="mq-dash-cat-count" data-mq-count="{{ client_count }}">{{ client_count }}</span>
+      <span class="mq-dash-cat-dot{% if client_count %} is-ready{% endif %}" aria-hidden="true"></span>
+    </a>
+  </section>
+
+  {# —— Lower zone —— #}
+  <section class="mq-dash-lower mq-dash-enter" style="--mq-dash-delay: 180ms">
+    <div class="mq-master-card mq-dash-panel">
+      <div class="mq-dash-panel-head">
+        <h2 class="mq-dash-panel-title">Recent quotes</h2>
+        <a class="mq-dash-panel-link" href="{% url 'quotes:quote_list' %}">View all quotes →</a>
+      </div>
+      {% if recent_quotes %}
+      <div class="table-responsive">
+        <table class="mq-master-table">
+          <thead>
+            <tr>
+              <th>Number</th>
+              <th>Client</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for q in recent_quotes %}
+            <tr>
+              <td data-label="Number"><a href="{% url 'quotes:quote_detail' q.pk %}">{{ q.number }}</a></td>
+              <td data-label="Client">
+                {% if q.customer %}{{ q.customer.company|default:q.customer.code }}{% else %}—{% endif %}
+              </td>
+              <td data-label="Status">
+                {% if q.status == 'DRAFT' %}
+                  <span class="mq-status-pill is-inactive">Draft</span>
+                {% elif q.status == 'CALCULATED' %}
+                  <span class="mq-status-pill is-active">Calculated</span>
+                {% elif q.status == 'ISSUED' %}
+                  <span class="mq-status-pill is-issued">Issued</span>
+                {% else %}
+                  <span class="mq-status-pill is-inactive">{{ q.status }}</span>
+                {% endif %}
+              </td>
+              <td data-label="Created">{{ q.created_at|date:"Y-m-d" }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="mq-dash-empty">
+        <p class="mb-2">No quotes yet.</p>
+        <a class="btn mq-btn-theme btn-sm" href="{% url 'quotes:quote_create' %}">Create first quote</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="mq-master-card mq-dash-panel">
+      <div class="mq-dash-panel-head">
+        <h2 class="mq-dash-panel-title">Next actions</h2>
+      </div>
+      <div class="mq-dash-actions">
+        <a class="mq-dash-action" href="{% url 'imports_excel:hub' %}">
+          <span class="mq-dash-action-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </span>
+          <span class="mq-dash-action-copy">
+            <span class="mq-dash-action-title">Import masters</span>
+            <span class="mq-dash-action-desc">Load materials, machines, and labor from Excel</span>
+          </span>
+          <span class="mq-dash-action-chevron" aria-hidden="true">›</span>
+        </a>
+        <a class="mq-dash-action" href="{% url 'processes:process_list' %}">
+          <span class="mq-dash-action-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.9 4.9l1.4 1.4"/><path d="M17.7 17.7l1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.9 19.1l1.4-1.4"/><path d="M17.7 6.3l1.4-1.4"/></svg>
+          </span>
+          <span class="mq-dash-action-copy">
+            <span class="mq-dash-action-title">Configure a process</span>
+            <span class="mq-dash-action-desc">Fields, formulas, and linked sub processes</span>
+          </span>
+          <span class="mq-dash-action-chevron" aria-hidden="true">›</span>
+        </a>
+        <a class="mq-dash-action" href="{% url 'quotes:quote_create' %}">
+          <span class="mq-dash-action-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
+          </span>
+          <span class="mq-dash-action-copy">
+            <span class="mq-dash-action-title">Create / continue a quote</span>
+            <span class="mq-dash-action-desc">Wizard: client → weight → processes → PDF</span>
+          </span>
+          <span class="mq-dash-action-chevron" aria-hidden="true">›</span>
+        </a>
+      </div>
+    </div>
+  </section>
 </div>
-<div class="row g-3">
-  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Materials</div><div class="fs-3 fw-semibold">{{ material_count }}</div></div></div>
-  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Machines</div><div class="fs-3 fw-semibold">{{ machine_count }}</div></div></div>
-  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Labor Roles</div><div class="fs-3 fw-semibold">{{ labor_count }}</div></div></div>
-  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Processes</div><div class="fs-3 fw-semibold">{{ process_count }}</div></div></div>
-  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Sub Processes</div><div class="fs-3 fw-semibold">{{ subprocess_count }}</div></div></div>
-  <div class="col-md-4 col-lg"><div class="stat-card"><div class="text-muted small">Quotes</div><div class="fs-3 fw-semibold">{{ quote_count }}</div></div></div>
-</div>
-<div class="mt-4 p-3 bg-white border rounded-3">
-  <h2 class="h6">Quick start</h2>
-  <ol class="mb-0 small">
-    <li>Download Excel templates from <a href="{% url 'imports_excel:hub' %}">Imports</a> (or use samples under <code>excel_templates/samples/</code>).</li>
-    <li>Define <a href="{% url 'processes:process_list' %}">Processes</a> and <a href="{% url 'processes:subprocess_list' %}">Sub Processes</a> with fields and formulas.</li>
-    <li>Create a quote, add processes (and optional sub processes), Calculate, then Generate PDF.</li>
-    <li>If something fails, open <strong>Error Logs</strong> and search by the correlation id shown in the popup.</li>
-  </ol>
-</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  var prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prefersReduced) return;
+  document.querySelectorAll("[data-mq-count]").forEach(function (el) {
+    var target = parseInt(el.getAttribute("data-mq-count"), 10);
+    if (!target || target < 1) return;
+    var start = 0;
+    var steps = Math.min(24, target);
+    var step = Math.max(1, Math.ceil(target / steps));
+    var tick = function () {
+      start = Math.min(target, start + step);
+      el.textContent = String(start);
+      if (start < target) requestAnimationFrame(tick);
+    };
+    el.textContent = "0";
+    requestAnimationFrame(tick);
+  });
+})();
+</script>
 {% endblock %}
