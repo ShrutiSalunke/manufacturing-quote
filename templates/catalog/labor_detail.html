@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ role.code }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block breadcrumb %}<a href="{% url 'catalog:labor_list' %}">Labor Roles</a> / {{ role.code }}{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <div class="mq-detail-heading">
+      <h1 class="mq-master-title">{{ role.code }} — {{ role.name }}</h1>
+      {% if role.is_active %}
+        <span class="mq-status-pill is-active">Active</span>
+      {% else %}
+        <span class="mq-status-pill is-inactive">Inactive</span>
+      {% endif %}
+    </div>
+    {% if user.is_app_admin %}
+    <div class="mq-master-controls">
+      <a class="btn btn-outline-primary mq-master-add" href="{% url 'catalog:labor_edit' role.pk %}">Edit</a>
+      {% if role.is_active %}
+      <form method="post" action="{% url 'catalog:labor_soft_delete' role.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-secondary mq-master-add" type="submit"
+          data-mq-confirm-submit data-mq-title="Soft delete labor role?" data-mq-message="{{ role.code }} will be set to Inactive." data-mq-confirm-label="Soft delete" data-mq-variant="warning">Soft delete</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'catalog:labor_restore' role.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-success mq-master-add" type="submit">Restore</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'catalog:labor_permanent_delete' role.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger mq-master-add" type="submit"
+          data-mq-confirm-submit data-mq-title="Permanently delete labor role?" data-mq-message="{{ role.code }} will be removed forever." data-mq-confirm-label="Delete permanently" data-mq-variant="danger">Delete permanently</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="mq-collapse-stack">
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-identity-section" aria-expanded="true" aria-controls="mq-identity-section">
+        <span class="mq-form-section-title mb-0">Identity</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-identity-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Code</div>
+              <div class="mq-detail-value">{{ role.code }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Name</div>
+              <div class="mq-detail-value">{{ role.name }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Plant</div>
+              <div class="mq-detail-value">{{ role.plant }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Updated</div>
+              <div class="mq-detail-value">{{ role.updated_at|date:"Y-m-d H:i" }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-rate-section" aria-expanded="true" aria-controls="mq-rate-section">
+        <span class="mq-form-section-title mb-0">Rate</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-rate-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Hourly rate</div>
+              <div class="mq-detail-value">{{ role.hourly_rate }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

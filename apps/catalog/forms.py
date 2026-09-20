@@ -1,10 +1,108 @@
-import json
-
 from django import forms
 
 from apps.core.models import Plant
 
-from .models import CustomFieldDefinition
+from .models import CustomFieldDefinition, LaborRole, Machine, Material
+
+
+class BootstrapFormMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for _name, field in self.fields.items():
+            w = field.widget
+            if isinstance(w, forms.CheckboxInput):
+                w.attrs.setdefault("class", "form-check-input")
+            elif isinstance(w, (forms.Select, forms.SelectMultiple)):
+                w.attrs.setdefault("class", "form-select")
+            elif isinstance(w, forms.DateInput):
+                w.attrs.setdefault("class", "form-control mq-input")
+                w.attrs.setdefault("type", "date")
+            else:
+                w.attrs.setdefault("class", "form-control mq-input")
+
+
+class MaterialForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Material
+        fields = [
+            "plant",
+            "code",
+            "name",
+            "uom",
+            "density",
+            "category",
+            "unit_price",
+            "currency",
+            "effective_from",
+            "effective_to",
+            "is_active",
+        ]
+        widgets = {
+            "effective_from": forms.DateInput(attrs={"type": "date"}),
+            "effective_to": forms.DateInput(attrs={"type": "date"}),
+        }
+        labels = {
+            "uom": "Unit of measure",
+            "unit_price": "Unit price",
+            "effective_from": "Effective from",
+            "effective_to": "Effective to",
+        }
+        help_texts = {
+            "code": "Stable unique key within the plant (e.g. SS-304).",
+            "density": "g/cm³ — used by the weight calculator.",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["plant"].queryset = Plant.objects.filter(is_active=True)
+
+
+class MachineForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Machine
+        fields = [
+            "plant",
+            "code",
+            "name",
+            "hourly_rate",
+            "setup_rate",
+            "efficiency_percent",
+            "is_active",
+        ]
+        labels = {
+            "hourly_rate": "Hourly rate",
+            "setup_rate": "Setup rate",
+            "efficiency_percent": "Efficiency %",
+        }
+        help_texts = {
+            "code": "Stable unique key within the plant (e.g. LASER-01).",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["plant"].queryset = Plant.objects.filter(is_active=True)
+
+
+class LaborRoleForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = LaborRole
+        fields = [
+            "plant",
+            "code",
+            "name",
+            "hourly_rate",
+            "is_active",
+        ]
+        labels = {
+            "hourly_rate": "Hourly rate",
+        }
+        help_texts = {
+            "code": "Stable unique key within the plant (e.g. OP-01).",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["plant"].queryset = Plant.objects.filter(is_active=True)
 
 
 class CustomFieldForm(forms.ModelForm):

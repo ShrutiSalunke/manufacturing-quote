@@ -4,6 +4,7 @@
 {% block extra_css %}
 <link href="{% static 'css/master-table.css' %}" rel="stylesheet">
 {% endblock %}
+{% block breadcrumb %}<a href="{% url 'quotes:client_list' %}">Clients</a> / {{ client.code }}{% endblock %}
 {% block content %}
 <div class="mq-master-page">
   <div class="mq-master-topbar">
@@ -53,109 +54,135 @@
     {% endif %}
   </div>
 
-  <div class="mq-master-card mq-detail-card">
-    <div class="mq-form-section">
-      <h2 class="mq-form-section-title">Identity</h2>
-      <div class="mq-detail-grid">
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">Client code</div>
-          <div class="mq-detail-value">{{ client.code }}</div>
-        </div>
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">Company name</div>
-          <div class="mq-detail-value">{{ client.company|default:"—" }}</div>
-        </div>
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">Contact name</div>
-          <div class="mq-detail-value">{{ client.name }}</div>
-        </div>
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">GSTIN</div>
-          <div class="mq-detail-value">{{ client.gstin|default:"—" }}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="mq-form-section">
-      <h2 class="mq-form-section-title">Contact</h2>
-      <div class="mq-detail-grid">
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">Email</div>
-          <div class="mq-detail-value">{{ client.email|default:"—" }}</div>
-        </div>
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">Phone</div>
-          <div class="mq-detail-value">{{ client.phone|default:"—" }}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="mq-form-section">
-      <h2 class="mq-form-section-title">Address</h2>
-      <div class="mq-detail-grid">
-        <div class="mq-detail-item mq-field-span-2">
-          <div class="mq-detail-label">Address</div>
-          <div class="mq-detail-value">
-            {{ client.address_line1|default:"—" }}{% if client.address_line2 %}<br>{{ client.address_line2 }}{% endif %}
+  <div class="mq-collapse-stack">
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-identity-section" aria-expanded="true" aria-controls="mq-identity-section">
+        <span class="mq-form-section-title mb-0">Identity</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-identity-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Client code</div>
+              <div class="mq-detail-value">{{ client.code }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Company name</div>
+              <div class="mq-detail-value">{{ client.company|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Contact name</div>
+              <div class="mq-detail-value">{{ client.name }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">GSTIN</div>
+              <div class="mq-detail-value">{{ client.gstin|default:"—" }}</div>
+            </div>
           </div>
         </div>
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">City</div>
-          <div class="mq-detail-value">{{ client.city|default:"—" }}</div>
+      </div>
+    </div>
+
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-contact-section" aria-expanded="true" aria-controls="mq-contact-section">
+        <span class="mq-form-section-title mb-0">Contact</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-contact-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Email</div>
+              <div class="mq-detail-value">{{ client.email|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Phone</div>
+              <div class="mq-detail-value">{{ client.phone|default:"—" }}</div>
+            </div>
+          </div>
         </div>
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">State</div>
-          <div class="mq-detail-value">{{ client.state|default:"—" }}</div>
-        </div>
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">Postal code</div>
-          <div class="mq-detail-value">{{ client.postal_code|default:"—" }}</div>
-        </div>
-        <div class="mq-detail-item">
-          <div class="mq-detail-label">Country</div>
-          <div class="mq-detail-value">{{ client.country|default:"—" }}</div>
+      </div>
+    </div>
+
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-address-section" aria-expanded="true" aria-controls="mq-address-section">
+        <span class="mq-form-section-title mb-0">Address</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-address-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item mq-field-span-2">
+              <div class="mq-detail-label">Address</div>
+              <div class="mq-detail-value">
+                {{ client.address_line1|default:"—" }}{% if client.address_line2 %}<br>{{ client.address_line2 }}{% endif %}
+              </div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">City</div>
+              <div class="mq-detail-value">{{ client.city|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">State</div>
+              <div class="mq-detail-value">{{ client.state|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Postal code</div>
+              <div class="mq-detail-value">{{ client.postal_code|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Country</div>
+              <div class="mq-detail-value">{{ client.country|default:"—" }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     {% if client.notes %}
-    <div class="mq-form-section">
-      <h2 class="mq-form-section-title">Internal notes</h2>
-      <p class="mq-detail-notes">{{ client.notes }}</p>
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-notes-section" aria-expanded="true" aria-controls="mq-notes-section">
+        <span class="mq-form-section-title mb-0">Internal notes</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-notes-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <p class="mq-detail-notes mb-0">{{ client.notes }}</p>
+        </div>
+      </div>
     </div>
     {% endif %}
 
-    <div class="mq-form-section mq-form-section-last">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mq-form-section-title mb-0">Recent quotes</h2>
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-quotes-section" aria-expanded="true" aria-controls="mq-quotes-section">
+        <span class="mq-form-section-title mb-0">Quotes</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-quotes-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          {% include "quotes/partials/client_quotes_panel.html" %}
+        </div>
       </div>
-      {% if quotes %}
-      <div class="table-responsive">
-        <table class="mq-master-table">
-          <thead>
-            <tr>
-              <th>Number</th>
-              <th>Plant</th>
-              <th>Status</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-          {% for q in quotes %}
-            <tr>
-              <td data-label="Number"><a href="{% url 'quotes:quote_detail' q.pk %}">{{ q.number }}</a></td>
-              <td data-label="Plant">{{ q.plant.code }}</td>
-              <td data-label="Status">{{ q.status }}</td>
-              <td data-label="Created">{{ q.created_at|date:"Y-m-d" }}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="text-muted small mb-0">No quotes for this client yet.</p>
-      {% endif %}
     </div>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+<script>
+  document.body.addEventListener("htmx:configRequest", function (event) {
+    event.detail.headers["X-CSRFToken"] = window.MQ && window.MQ.csrfToken;
+  });
+</script>
 {% endblock %}

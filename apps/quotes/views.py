@@ -89,12 +89,31 @@ def client_list(request):
 @login_required
 def client_detail(request, pk):
     client = get_object_or_404(Customer, pk=pk)
-    quotes = client.quotes.select_related("plant").order_by("-created_at")[:20]
-    return render(
-        request,
-        "quotes/client_detail.html",
-        {"client": client, "quotes": quotes},
+    qs = client.quotes.select_related("plant").order_by("-created_at", "-id")
+
+    try:
+        per_page = int(request.GET.get("per_page") or CLIENT_DEFAULT_PER_PAGE)
+    except (TypeError, ValueError):
+        per_page = CLIENT_DEFAULT_PER_PAGE
+    if per_page not in CLIENT_PER_PAGE_CHOICES:
+        per_page = CLIENT_DEFAULT_PER_PAGE
+
+    paginator = Paginator(qs, per_page)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    context = {
+        "client": client,
+        "quotes": page_obj.object_list,
+        "page_obj": page_obj,
+        "per_page": per_page,
+        "per_page_choices": CLIENT_PER_PAGE_CHOICES,
+        "page_numbers": _page_number_window(page_obj),
+    }
+    template = (
+        "quotes/partials/client_quotes_panel.html"
+        if getattr(request, "htmx", False)
+        else "quotes/client_detail.html"
     )
+    return render(request, template, context)
 
 
 @admin_required

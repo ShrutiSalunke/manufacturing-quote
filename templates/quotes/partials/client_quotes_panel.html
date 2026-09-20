@@ -1,0 +1,99 @@
+<div id="client-quotes-panel">
+  {% if quotes %}
+  <div class="table-responsive">
+    <table class="mq-master-table">
+      <thead>
+        <tr>
+          <th>Number</th>
+          <th>Plant</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for q in quotes %}
+        <tr>
+          <td data-label="Number"><a href="{% url 'quotes:quote_detail' q.pk %}">{{ q.number }}</a></td>
+          <td data-label="Plant">{{ q.plant.code }}</td>
+          <td data-label="Status">{{ q.status }}</td>
+          <td data-label="Created">{{ q.created_at|date:"Y-m-d" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mq-master-footer">
+    <div class="mq-footer-left">
+      <label class="small text-muted mb-0" for="client-quotes-per-page">Rows per page</label>
+      <select
+        id="client-quotes-per-page"
+        class="form-select form-select-sm"
+        name="per_page"
+        hx-get="{% url 'quotes:client_detail' client.pk %}"
+        hx-target="#client-quotes-panel"
+        hx-swap="outerHTML swap:0.15s"
+        hx-vals='{"page": "1"}'
+        hx-push-url="true"
+      >
+        {% for n in per_page_choices %}
+        <option value="{{ n }}" {% if per_page == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+      <span class="mq-range">
+        {% if page_obj.paginator.count %}
+          Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+        {% else %}
+          Showing 0 of 0
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="mq-footer-right mq-pager">
+      {% if page_obj.has_previous %}
+        <a
+          href="?page={{ page_obj.previous_page_number }}&amp;per_page={{ per_page }}"
+          hx-get="{% url 'quotes:client_detail' client.pk %}?page={{ page_obj.previous_page_number }}&amp;per_page={{ per_page }}"
+          hx-target="#client-quotes-panel"
+          hx-swap="outerHTML swap:0.15s"
+          hx-push-url="true"
+          aria-label="Previous"
+        >‹</a>
+      {% else %}
+        <span class="mq-page is-disabled">‹</span>
+      {% endif %}
+
+      {% for num in page_numbers %}
+        {% if num is None %}
+          <span class="mq-ellipsis">…</span>
+        {% elif num == page_obj.number %}
+          <span class="mq-page is-current">{{ num }}</span>
+        {% else %}
+          <a
+            href="?page={{ num }}&amp;per_page={{ per_page }}"
+            hx-get="{% url 'quotes:client_detail' client.pk %}?page={{ num }}&amp;per_page={{ per_page }}"
+            hx-target="#client-quotes-panel"
+            hx-swap="outerHTML swap:0.15s"
+            hx-push-url="true"
+          >{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a
+          href="?page={{ page_obj.next_page_number }}&amp;per_page={{ per_page }}"
+          hx-get="{% url 'quotes:client_detail' client.pk %}?page={{ page_obj.next_page_number }}&amp;per_page={{ per_page }}"
+          hx-target="#client-quotes-panel"
+          hx-swap="outerHTML swap:0.15s"
+          hx-push-url="true"
+          aria-label="Next"
+        >›</a>
+      {% else %}
+        <span class="mq-page is-disabled">›</span>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <p class="text-muted small mb-0">No quotes for this client yet.</p>
+  {% endif %}
+</div>

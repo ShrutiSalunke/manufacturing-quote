@@ -1,15 +1,115 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ material.code }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
 {% block breadcrumb %}<a href="{% url 'catalog:material_list' %}">Materials</a> / {{ material.code }}{% endblock %}
 {% block content %}
-<h1 class="h3 mb-3">{{ material.name }}</h1>
-<dl class="row bg-white p-3 rounded border">
-  <dt class="col-sm-3">Code</dt><dd class="col-sm-9">{{ material.code }}</dd>
-  <dt class="col-sm-3">Plant</dt><dd class="col-sm-9">{{ material.plant }}</dd>
-  <dt class="col-sm-3">UOM</dt><dd class="col-sm-9">{{ material.uom }}</dd>
-  <dt class="col-sm-3">Density</dt><dd class="col-sm-9">{{ material.density|default:"—" }}</dd>
-  <dt class="col-sm-3">Category</dt><dd class="col-sm-9">{{ material.category|default:"—" }}</dd>
-  <dt class="col-sm-3">Unit price</dt><dd class="col-sm-9">{{ material.unit_price }} {{ material.currency }}</dd>
-  <dt class="col-sm-3">Effective</dt><dd class="col-sm-9">{{ material.effective_from|default:"—" }} → {{ material.effective_to|default:"—" }}</dd>
-</dl>
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <div class="mq-detail-heading">
+      <h1 class="mq-master-title">{{ material.code }} — {{ material.name }}</h1>
+      {% if material.is_active %}
+        <span class="mq-status-pill is-active">Active</span>
+      {% else %}
+        <span class="mq-status-pill is-inactive">Inactive</span>
+      {% endif %}
+    </div>
+    {% if user.is_app_admin %}
+    <div class="mq-master-controls">
+      <a class="btn btn-outline-primary mq-master-add" href="{% url 'catalog:material_edit' material.pk %}">Edit</a>
+      {% if material.is_active %}
+      <form method="post" action="{% url 'catalog:material_soft_delete' material.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-secondary mq-master-add" type="submit"
+          data-mq-confirm-submit data-mq-title="Soft delete material?" data-mq-message="{{ material.code }} will be set to Inactive." data-mq-confirm-label="Soft delete" data-mq-variant="warning">Soft delete</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'catalog:material_restore' material.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-success mq-master-add" type="submit">Restore</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'catalog:material_permanent_delete' material.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger mq-master-add" type="submit"
+          data-mq-confirm-submit data-mq-title="Permanently delete material?" data-mq-message="{{ material.code }} will be removed forever." data-mq-confirm-label="Delete permanently" data-mq-variant="danger">Delete permanently</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="mq-collapse-stack">
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-identity-section" aria-expanded="true" aria-controls="mq-identity-section">
+        <span class="mq-form-section-title mb-0">Identity</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-identity-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Code</div>
+              <div class="mq-detail-value">{{ material.code }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Name</div>
+              <div class="mq-detail-value">{{ material.name }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Plant</div>
+              <div class="mq-detail-value">{{ material.plant }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Category</div>
+              <div class="mq-detail-value">{{ material.category|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">UOM</div>
+              <div class="mq-detail-value">{{ material.uom }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Density</div>
+              <div class="mq-detail-value">{{ material.density|default:"—" }}{% if material.density %} g/cm³{% endif %}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-master-card mq-detail-card mq-collapse-card">
+      <button class="mq-collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mq-pricing-section" aria-expanded="true" aria-controls="mq-pricing-section">
+        <span class="mq-form-section-title mb-0">Pricing &amp; dates</span>
+        <span class="mq-collapse-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      <div id="mq-pricing-section" class="collapse show">
+        <div class="mq-form-section mq-form-section-last">
+          <div class="mq-detail-grid">
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Unit price</div>
+              <div class="mq-detail-value">{{ material.unit_price }} {{ material.currency }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Effective from</div>
+              <div class="mq-detail-value">{{ material.effective_from|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Effective to</div>
+              <div class="mq-detail-value">{{ material.effective_to|default:"—" }}</div>
+            </div>
+            <div class="mq-detail-item">
+              <div class="mq-detail-label">Updated</div>
+              <div class="mq-detail-value">{{ material.updated_at|date:"Y-m-d H:i" }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
