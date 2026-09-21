@@ -109,6 +109,9 @@
     <a class="btn btn-outline-secondary" href="{% url 'quotes:quote_list' %}">Cancel</a>
     <div class="mq-wizard-actions-right">
       <button class="btn mq-btn-theme" type="submit">Save &amp; Continue</button>
+      {% if quote and next_step %}
+      <a class="btn btn-outline-dark" href="{% url 'quotes:wizard_step' quote.pk next_step.id %}">Next</a>
+      {% endif %}
     </div>
   </div>
 </form>

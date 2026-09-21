@@ -43,6 +43,17 @@ class ManufacturingQuoteMVPTests(TestCase):
         resp = self.client.get(reverse("core:dashboard"))
         self.assertEqual(resp.status_code, 200)
 
+    def test_root_redirects_anonymous_to_login(self):
+        resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.url, reverse("accounts:login"))
+
+    def test_root_redirects_authenticated_to_dashboard(self):
+        self.client.login(username="admin@example.com", password="Admin123!")
+        resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.url, reverse("core:dashboard"))
+
     def test_materials_template_includes_custom_field(self):
         CustomFieldDefinition.objects.create(
             entity_type=CustomFieldDefinition.EntityType.MATERIAL,

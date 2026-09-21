@@ -1,10 +1,20 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.urls import include, path, re_path
 from django.views.static import serve
 
+
+def root(request):
+    """Site root: login for guests, dashboard when already signed in."""
+    if request.user.is_authenticated:
+        return redirect("core:dashboard")
+    return redirect("accounts:login")
+
+
 urlpatterns = [
+    path("", root, name="root"),
     path("admin/", admin.site.urls),
     path("accounts/", include("apps.accounts.urls")),
     path("", include("apps.core.urls")),

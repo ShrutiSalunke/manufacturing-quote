@@ -114,6 +114,92 @@ body.mq-app {
   justify-content: center;
 }
 
+.app-user-btn:hover .app-user-avatar,
+.app-user-btn:focus-visible .app-user-avatar,
+.app-user-btn[aria-expanded="true"] .app-user-avatar {
+  box-shadow: 0 0 0 2px rgba(245, 197, 24, 0.45);
+}
+
+/* —— User account dropdown —— */
+.mq-user-menu {
+  --mq-user-border: #e5e7eb;
+  min-width: 14.5rem;
+  padding: 0.35rem 0 0.4rem;
+  margin-top: 0.55rem !important;
+  border: 1px solid var(--mq-user-border);
+  border-radius: 0.65rem;
+  border-top: 3px solid #f5c518;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12);
+}
+
+.mq-user-menu-head {
+  padding: 0.65rem 0.95rem 0.55rem;
+}
+
+.mq-user-menu-name {
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.mq-user-menu-role {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  background: rgba(245, 197, 24, 0.22);
+  color: #374151;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mq-user-menu-divider {
+  margin: 0.35rem 0.75rem;
+  border: 0;
+  border-top: 1px solid var(--mq-user-border);
+  opacity: 1;
+}
+
+.mq-user-menu-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: calc(100% - 0.7rem);
+  margin: 0.15rem 0.35rem 0;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: #111827;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mq-user-menu-logout svg {
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
+.mq-user-menu-logout:hover,
+.mq-user-menu-logout:focus-visible {
+  background: #f5c518;
+  color: #111827;
+  outline: none;
+}
+
+.mq-user-menu-logout:hover svg,
+.mq-user-menu-logout:focus-visible svg {
+  color: #111827;
+}
+
 /* —— Shell —— */
 #app-shell {
   position: relative;

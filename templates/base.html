@@ -30,13 +30,22 @@
     <button class="app-user-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
       <span class="app-user-avatar" aria-hidden="true">{{ user.email|default:user.username|make_list|first|upper }}</span>
     </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-      <li><h6 class="dropdown-header">{{ user.get_full_name|default:user.email|default:user.username }}</h6></li>
-      <li><span class="dropdown-item-text text-muted small">{{ user.role }}</span></li>
-      <li><hr class="dropdown-divider"></li>
+    <ul class="dropdown-menu dropdown-menu-end mq-user-menu">
+      <li class="mq-user-menu-head">
+        <div class="mq-user-menu-name">{{ user.get_full_name|default:user.email|default:user.username }}</div>
+        <div class="mq-user-menu-role">{{ user.role }}</div>
+      </li>
+      <li><hr class="mq-user-menu-divider"></li>
       <li>
         <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
-          <button class="dropdown-item" type="submit">Log Out</button>
+          <button class="mq-user-menu-logout" type="submit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <path d="M16 17l5-5-5-5"></path>
+              <path d="M21 12H9"></path>
+            </svg>
+            <span>Log Out</span>
+          </button>
         </form>
       </li>
     </ul>
