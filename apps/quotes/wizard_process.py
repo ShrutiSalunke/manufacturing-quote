@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from django.shortcuts import get_object_or_404
 
-from apps.catalog.models import Material
-from apps.processes import material_bridge
+from apps.catalog.models import LaborRole, Machine, Material
+from apps.processes import labor_bridge, machine_bridge, material_bridge
 from apps.processes.models import (
     Process,
     QuoteProcess,
@@ -27,6 +27,8 @@ def _serialize_field(f) -> dict:
         "is_required": bool(f.is_required),
         "help_text": f.help_text or "",
         "material_property_key": f.material_property_key or "",
+        "machine_property_key": getattr(f, "machine_property_key", "") or "",
+        "labor_property_key": getattr(f, "labor_property_key", "") or "",
     }
 
 
@@ -37,12 +39,30 @@ def _plant_materials_payload(quote) -> list[dict]:
     ]
 
 
-def _schema_from_process(process, materials_payload: list[dict] | None = None) -> dict:
+def _plant_machines_payload(quote) -> list[dict]:
+    return [
+        {"id": m.pk, "label": f"{m.code} — {m.name}"}
+        for m in Machine.objects.filter(plant=quote.plant, is_active=True).order_by("code")
+    ]
+
+
+def _plant_labor_payload(quote) -> list[dict]:
+    return [
+        {"id": r.pk, "label": f"{r.code} — {r.name}"}
+        for r in LaborRole.objects.filter(plant=quote.plant, is_active=True).order_by("code")
+    ]
+
+
+def _schema_from_process(
+    process,
+    materials_payload: list[dict] | None = None,
+    machines_payload: list[dict] | None = None,
+    labor_payload: list[dict] | None = None,
+) -> dict:
     """Build process schema dict from an already-loaded Process (prefers prefetch cache)."""
-    materials = []
-    if process.use_material_properties:
-        materials = list(materials_payload) if materials_payload is not None else []
-    # Filter/sort in Python so prefetched M2M does not re-query.
+    materials = list(materials_payload) if process.use_material_properties and materials_payload is not None else []
+    machines = list(machines_payload) if process.use_machine_properties and machines_payload is not None else []
+    labor_roles = list(labor_payload) if process.use_labor_properties and labor_payload is not None else []
     active_subs = sorted(
         (sp for sp in process.subprocesses.all() if sp.is_active),
         key=lambda sp: sp.code,
@@ -64,9 +84,13 @@ def _schema_from_process(process, materials_payload: list[dict] | None = None) -
             "name": process.name,
             "result_unit": process.result_unit,
             "use_material_properties": bool(process.use_material_properties),
+            "use_machine_properties": bool(process.use_machine_properties),
+            "use_labor_properties": bool(process.use_labor_properties),
         },
         "fields": [_serialize_field(f) for f in process.fields.all()],
         "materials": materials,
+        "machines": machines,
+        "labor_roles": labor_roles,
         "subprocesses": subs,
     }
 
@@ -77,6 +101,8 @@ def process_schema(
     *,
     process=None,
     materials_payload: list[dict] | None = None,
+    machines_payload: list[dict] | None = None,
+    labor_payload: list[dict] | None = None,
 ) -> dict:
     if process is None:
         process = get_object_or_404(
@@ -87,28 +113,92 @@ def process_schema(
         )
     if process.use_material_properties and materials_payload is None:
         materials_payload = _plant_materials_payload(quote)
-    return _schema_from_process(process, materials_payload)
+    if process.use_machine_properties and machines_payload is None:
+        machines_payload = _plant_machines_payload(quote)
+    if process.use_labor_properties and labor_payload is None:
+        labor_payload = _plant_labor_payload(quote)
+    return _schema_from_process(
+        process, materials_payload, machines_payload, labor_payload
+    )
 
 
 def material_autofill_values(quote, process_id: int, material_id: int) -> dict:
-    process = get_object_or_404(Process, pk=process_id, plant=quote.plant, is_active=True)
-    material = get_object_or_404(Material, pk=material_id, plant=quote.plant, is_active=True)
-    process_vals = {}
+    return catalog_autofill_values(quote, process_id, material_id=material_id)
+
+
+def catalog_autofill_values(
+    quote,
+    process_id: int,
+    *,
+    material_id: int | None = None,
+    machine_id: int | None = None,
+    labor_id: int | None = None,
+) -> dict:
+    process = get_object_or_404(
+        Process.objects.prefetch_related("fields", "subprocesses__fields"),
+        pk=process_id,
+        plant=quote.plant,
+        is_active=True,
+    )
+    material = None
+    machine = None
+    labor = None
+    if material_id:
+        material = get_object_or_404(
+            Material, pk=int(material_id), plant=quote.plant, is_active=True
+        )
+    if machine_id:
+        machine = get_object_or_404(
+            Machine, pk=int(machine_id), plant=quote.plant, is_active=True
+        )
+    if labor_id:
+        labor = get_object_or_404(
+            LaborRole, pk=int(labor_id), plant=quote.plant, is_active=True
+        )
+
+    process_vals: dict = {}
     for f in process.fields.all():
-        if f.material_property_key:
-            resolved = material_bridge.resolve_material_property(material, f.material_property_key)
+        if material and f.material_property_key:
+            resolved = material_bridge.resolve_material_property(
+                material, f.material_property_key
+            )
             if resolved is not None and resolved != "":
-                process_vals[f.code] = str(resolved)
-    sub_vals = {}
-    for sp in process.subprocesses.filter(is_active=True):
-        sp_map = {}
+                process_vals.setdefault(f.code, str(resolved))
+        if machine and getattr(f, "machine_property_key", None):
+            resolved = machine_bridge.resolve_machine_property(
+                machine, f.machine_property_key
+            )
+            if resolved is not None and resolved != "":
+                process_vals.setdefault(f.code, str(resolved))
+        if labor and getattr(f, "labor_property_key", None):
+            resolved = labor_bridge.resolve_labor_property(labor, f.labor_property_key)
+            if resolved is not None and resolved != "":
+                process_vals.setdefault(f.code, str(resolved))
+
+    sub_vals: dict = {}
+    for sp in process.subprocesses.all():
+        if not sp.is_active:
+            continue
+        sp_map: dict = {}
         for f in sp.fields.all():
-            if f.material_property_key:
+            if material and f.material_property_key:
                 resolved = material_bridge.resolve_material_property(
                     material, f.material_property_key
                 )
                 if resolved is not None and resolved != "":
-                    sp_map[f.code] = str(resolved)
+                    sp_map.setdefault(f.code, str(resolved))
+            if machine and getattr(f, "machine_property_key", None):
+                resolved = machine_bridge.resolve_machine_property(
+                    machine, f.machine_property_key
+                )
+                if resolved is not None and resolved != "":
+                    sp_map.setdefault(f.code, str(resolved))
+            if labor and getattr(f, "labor_property_key", None):
+                resolved = labor_bridge.resolve_labor_property(
+                    labor, f.labor_property_key
+                )
+                if resolved is not None and resolved != "":
+                    sp_map.setdefault(f.code, str(resolved))
         if sp_map:
             sub_vals[str(sp.pk)] = sp_map
     return {"process_fields": process_vals, "subprocess_fields": sub_vals}
@@ -120,10 +210,14 @@ def quote_process_payload(
     *,
     qp=None,
     materials_payload: list[dict] | None = None,
+    machines_payload: list[dict] | None = None,
+    labor_payload: list[dict] | None = None,
 ) -> dict:
     if qp is None:
         qp = get_object_or_404(
-            QuoteProcess.objects.select_related("process", "material").prefetch_related(
+            QuoteProcess.objects.select_related(
+                "process", "material", "machine", "labor_role"
+            ).prefetch_related(
                 "field_values",
                 "subprocesses__field_values",
                 "subprocesses__subprocess",
@@ -138,9 +232,13 @@ def quote_process_payload(
         qp.process_id,
         process=qp.process,
         materials_payload=materials_payload,
+        machines_payload=machines_payload,
+        labor_payload=labor_payload,
     )
     schema["qp_id"] = qp.pk
     schema["material_id"] = qp.material_id
+    schema["machine_id"] = qp.machine_id
+    schema["labor_id"] = qp.labor_role_id
     schema["values"] = {fv.field_code: fv.value for fv in qp.field_values.all()}
     subprocess_rows = list(qp.subprocesses.all())
     schema["selected_subprocess_ids"] = [qs.subprocess_id for qs in subprocess_rows]
@@ -154,7 +252,11 @@ def quote_process_payload(
 def existing_blocks_payload(quote) -> list[dict]:
     """Serialize all quote processes for multi-block editor hydration."""
     materials_payload = _plant_materials_payload(quote)
-    qps = quote.quote_processes.select_related("process", "material").prefetch_related(
+    machines_payload = _plant_machines_payload(quote)
+    labor_payload = _plant_labor_payload(quote)
+    qps = quote.quote_processes.select_related(
+        "process", "material", "machine", "labor_role"
+    ).prefetch_related(
         "field_values",
         "subprocesses__field_values",
         "subprocesses__subprocess",
@@ -163,7 +265,12 @@ def existing_blocks_payload(quote) -> list[dict]:
     )
     return [
         quote_process_payload(
-            quote, qp.pk, qp=qp, materials_payload=materials_payload
+            quote,
+            qp.pk,
+            qp=qp,
+            materials_payload=materials_payload,
+            machines_payload=machines_payload,
+            labor_payload=labor_payload,
         )
         for qp in qps
     ]
@@ -182,6 +289,50 @@ def _read_field_values(post, field_defs, prefix: str) -> dict:
     return out
 
 
+def _resolve_optional_catalog(quote, process, post, prefix: str):
+    material = None
+    machine = None
+    labor = None
+
+    material_id = (post.get(f"{prefix}material_id") or "").strip()
+    if process.use_material_properties:
+        if not material_id:
+            raise ValueError(f"Process {process.code} requires a material.")
+        material = get_object_or_404(
+            Material, pk=int(material_id), plant=quote.plant, is_active=True
+        )
+    elif material_id:
+        material = get_object_or_404(
+            Material, pk=int(material_id), plant=quote.plant, is_active=True
+        )
+
+    machine_id = (post.get(f"{prefix}machine_id") or "").strip()
+    if process.use_machine_properties:
+        if not machine_id:
+            raise ValueError(f"Process {process.code} requires a machine.")
+        machine = get_object_or_404(
+            Machine, pk=int(machine_id), plant=quote.plant, is_active=True
+        )
+    elif machine_id:
+        machine = get_object_or_404(
+            Machine, pk=int(machine_id), plant=quote.plant, is_active=True
+        )
+
+    labor_id = (post.get(f"{prefix}labor_id") or "").strip()
+    if process.use_labor_properties:
+        if not labor_id:
+            raise ValueError(f"Process {process.code} requires a labor role.")
+        labor = get_object_or_404(
+            LaborRole, pk=int(labor_id), plant=quote.plant, is_active=True
+        )
+    elif labor_id:
+        labor = get_object_or_404(
+            LaborRole, pk=int(labor_id), plant=quote.plant, is_active=True
+        )
+
+    return material, machine, labor
+
+
 def _save_one_block(quote, post, prefix: str) -> QuoteProcess | None:
     """
     Save one process block. prefix e.g. 'block-0-'.
@@ -197,30 +348,23 @@ def _save_one_block(quote, post, prefix: str) -> QuoteProcess | None:
         plant=quote.plant,
         is_active=True,
     )
-    material = None
-    material_id = (post.get(f"{prefix}material_id") or "").strip()
-    if process.use_material_properties:
-        if not material_id:
-            raise ValueError(f"Process {process.code} requires a material.")
-        material = get_object_or_404(
-            Material, pk=int(material_id), plant=quote.plant, is_active=True
-        )
-    elif material_id:
-        material = get_object_or_404(
-            Material, pk=int(material_id), plant=quote.plant, is_active=True
-        )
+    material, machine, labor = _resolve_optional_catalog(quote, process, post, prefix)
 
     qp_id = (post.get(f"{prefix}qp_id") or "").strip()
     if qp_id:
         qp = get_object_or_404(QuoteProcess, pk=int(qp_id), quote=quote)
         qp.process = process
         qp.material = material
-        qp.save(update_fields=["process", "material"])
+        qp.machine = machine
+        qp.labor_role = labor
+        qp.save(update_fields=["process", "material", "machine", "labor_role"])
     else:
         qp = QuoteProcess.objects.create(
             quote=quote,
             process=process,
             material=material,
+            machine=machine,
+            labor_role=labor,
             sort_order=quote.quote_processes.count() * 10,
         )
 
@@ -231,7 +375,6 @@ def _save_one_block(quote, post, prefix: str) -> QuoteProcess | None:
             quote_process=qp, field_code=code, value=value
         )
 
-    # Subprocess rows: block-0-sub-0-id, block-0-sub-0-fld_X, …
     sub_count = int(post.get(f"{prefix}sub_count") or 0)
     selected_ids: list[int] = []
     seen = set()
@@ -262,7 +405,6 @@ def _save_one_block(quote, post, prefix: str) -> QuoteProcess | None:
         )
         qs.sort_order = order * 10
         qs.save(update_fields=["sort_order"])
-        # Find row index for this sp_id to read fields
         row_prefix = None
         for i in range(sub_count):
             if (post.get(f"{prefix}sub-{i}-id") or "").strip() == str(sp_id):

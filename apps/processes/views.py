@@ -475,10 +475,26 @@ def quote_add_process(request, quote_pk):
                     "processes/quote_add_process.html",
                     {"quote": quote, "form": form, "wizard_mode": wizard_mode},
                 )
+            if process.use_machine_properties and not form.cleaned_data.get("machine"):
+                messages.error(request, "This process requires a machine selection.")
+                return render(
+                    request,
+                    "processes/quote_add_process.html",
+                    {"quote": quote, "form": form, "wizard_mode": wizard_mode},
+                )
+            if process.use_labor_properties and not form.cleaned_data.get("labor_role"):
+                messages.error(request, "This process requires a labor role selection.")
+                return render(
+                    request,
+                    "processes/quote_add_process.html",
+                    {"quote": quote, "form": form, "wizard_mode": wizard_mode},
+                )
             qp = QuoteProcess.objects.create(
                 quote=quote,
                 process=process,
                 material=form.cleaned_data.get("material"),
+                machine=form.cleaned_data.get("machine"),
+                labor_role=form.cleaned_data.get("labor_role"),
                 notes=form.cleaned_data.get("notes") or "",
                 sort_order=quote.quote_processes.count() * 10,
             )

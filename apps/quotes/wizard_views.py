@@ -506,11 +506,20 @@ def wizard_process_autofill(request, quote_pk):
     quote = get_object_or_404(Quote, pk=quote_pk)
     process_id = request.GET.get("process_id")
     material_id = request.GET.get("material_id")
-    if not process_id or not material_id:
-        return JsonResponse({"error": "process_id and material_id required"}, status=400)
+    machine_id = request.GET.get("machine_id")
+    labor_id = request.GET.get("labor_id")
+    if not process_id or not (material_id or machine_id or labor_id):
+        return JsonResponse(
+            {"error": "process_id and at least one of material_id, machine_id, labor_id required"},
+            status=400,
+        )
     try:
-        data = wizard_process.material_autofill_values(
-            quote, int(process_id), int(material_id)
+        data = wizard_process.catalog_autofill_values(
+            quote,
+            int(process_id),
+            material_id=int(material_id) if material_id else None,
+            machine_id=int(machine_id) if machine_id else None,
+            labor_id=int(labor_id) if labor_id else None,
         )
     except Exception as exc:
         return JsonResponse({"error": str(exc)}, status=404)

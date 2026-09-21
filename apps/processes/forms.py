@@ -1,11 +1,11 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from apps.catalog.models import Material
+from apps.catalog.models import LaborRole, Machine, Material
 from apps.core.models import Plant
 from apps.costing.engine import FormulaError, validate_formula_against_fields, validate_identifier
 
-from . import material_bridge
+from . import labor_bridge, machine_bridge, material_bridge
 from .models import (
     Process,
     ProcessField,
@@ -59,28 +59,76 @@ def apply_formula_field_validation(form, formset) -> bool:
     return True
 
 
-def _configure_material_property_field(form):
-    """Replace free-text material key with a dropdown of Material master properties."""
-    if "material_property_key" not in form.fields:
+def _configure_choice_property_field(
+    form,
+    *,
+    field_name: str,
+    choices_fn,
+    label: str,
+    help_text: str,
+):
+    if field_name not in form.fields:
         return
-    choices = list(material_bridge.material_property_choices())
+    choices = list(choices_fn())
     existing = ""
     if getattr(form, "instance", None) is not None:
-        existing = getattr(form.instance, "material_property_key", "") or ""
+        existing = getattr(form.instance, field_name, "") or ""
     allowed = {c[0] for c in choices}
     if existing and existing not in allowed:
         choices.append((existing, f"{existing} (saved)"))
-    form.fields["material_property_key"] = forms.ChoiceField(
+    form.fields[field_name] = forms.ChoiceField(
         choices=choices,
         required=False,
+        label=label,
+        help_text=help_text,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        initial=existing or "",
+    )
+
+
+def _configure_material_property_field(form):
+    _configure_choice_property_field(
+        form,
+        field_name="material_property_key",
+        choices_fn=material_bridge.material_property_choices,
         label="Auto-fill from material",
         help_text=(
             "Optional. Pick a property from the Material master. Used on the quote when "
             "“Use material properties” is on and a material is selected."
         ),
-        widget=forms.Select(attrs={"class": "form-select"}),
-        initial=existing or "",
     )
+
+
+def _configure_machine_property_field(form):
+    _configure_choice_property_field(
+        form,
+        field_name="machine_property_key",
+        choices_fn=machine_bridge.machine_property_choices,
+        label="Auto-fill from machine",
+        help_text=(
+            "Optional. Pick a property from the Machine master. Used on the quote when "
+            "“Use machine properties” is on and a machine is selected."
+        ),
+    )
+
+
+def _configure_labor_property_field(form):
+    _configure_choice_property_field(
+        form,
+        field_name="labor_property_key",
+        choices_fn=labor_bridge.labor_property_choices,
+        label="Auto-fill from labor",
+        help_text=(
+            "Optional. Pick a property from the Labor Roles master. Used on the quote when "
+            "“Use labor properties” is on and a labor role is selected."
+        ),
+    )
+
+
+def _configure_all_property_fields(form):
+    _configure_material_property_field(form)
+    _configure_machine_property_field(form)
+    _configure_labor_property_field(form)
 
 
 def _default_plant():
@@ -101,6 +149,8 @@ class ProcessForm(BootstrapFormMixin, forms.ModelForm):
             "result_formula",
             "result_unit",
             "use_material_properties",
+            "use_machine_properties",
+            "use_labor_properties",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 2}),
@@ -109,11 +159,19 @@ class ProcessForm(BootstrapFormMixin, forms.ModelForm):
         help_texts = {
             "result_formula": (
                 "Use only field codes from the Fields section above, plus numbers "
-                "(e.g. LENGTH * RATE * 1.1). Material values must come via Auto-fill, not MAT_* names."
+                "(e.g. LENGTH * RATE * 1.1). Catalog values must come via Auto-fill."
             ),
             "use_material_properties": (
                 "When enabled, the quote asks for a material and can auto-fill fields that have "
-                "Auto-fill from material set. Materials are not used directly in the formula."
+                "Auto-fill from material set."
+            ),
+            "use_machine_properties": (
+                "When enabled, the quote asks for a machine and can auto-fill fields that have "
+                "Auto-fill from machine set."
+            ),
+            "use_labor_properties": (
+                "When enabled, the quote asks for a labor role and can auto-fill fields that have "
+                "Auto-fill from labor set."
             ),
         }
 
@@ -146,6 +204,8 @@ class SubProcessForm(BootstrapFormMixin, forms.ModelForm):
             "result_formula",
             "result_unit",
             "use_material_properties",
+            "use_machine_properties",
+            "use_labor_properties",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 2}),
@@ -154,11 +214,16 @@ class SubProcessForm(BootstrapFormMixin, forms.ModelForm):
         help_texts = {
             "result_formula": (
                 "Use only field codes from the Fields section above, plus numbers "
-                "(e.g. SETUP_MIN * RATE). Material values must come via Auto-fill, not MAT_* names."
+                "(e.g. SETUP_MIN * RATE). Catalog values must come via Auto-fill."
             ),
             "use_material_properties": (
-                "When enabled, inherits the quote process material for Auto-fill on fields. "
-                "Materials are not used directly in the formula."
+                "When enabled, inherits the quote process material for Auto-fill on fields."
+            ),
+            "use_machine_properties": (
+                "When enabled, inherits the quote process machine for Auto-fill on fields."
+            ),
+            "use_labor_properties": (
+                "When enabled, inherits the quote process labor role for Auto-fill on fields."
             ),
         }
 
@@ -180,6 +245,13 @@ class SubProcessForm(BootstrapFormMixin, forms.ModelForm):
         return obj
 
 
+_FIELD_PROPERTY_KEYS = (
+    "material_property_key",
+    "machine_property_key",
+    "labor_property_key",
+)
+
+
 class ProcessFieldForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = ProcessField
@@ -195,11 +267,13 @@ class ProcessFieldForm(BootstrapFormMixin, forms.ModelForm):
             "sort_order",
             "help_text",
             "material_property_key",
+            "machine_property_key",
+            "labor_property_key",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        _configure_material_property_field(self)
+        _configure_all_property_fields(self)
 
     def clean_code(self):
         code = (self.cleaned_data["code"] or "").upper()
@@ -224,6 +298,8 @@ class ProcessFieldInlineForm(BootstrapFormMixin, forms.ModelForm):
             "is_required",
             "sort_order",
             "material_property_key",
+            "machine_property_key",
+            "labor_property_key",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -231,7 +307,7 @@ class ProcessFieldInlineForm(BootstrapFormMixin, forms.ModelForm):
         self.empty_permitted = True
         self.fields["code"].required = False
         self.fields["label"].required = False
-        _configure_material_property_field(self)
+        _configure_all_property_fields(self)
 
     def clean(self):
         cleaned = super().clean()
@@ -247,7 +323,7 @@ class ProcessFieldInlineForm(BootstrapFormMixin, forms.ModelForm):
                 cleaned.get("default_value"),
                 cleaned.get("min_value") is not None,
                 cleaned.get("max_value") is not None,
-                cleaned.get("material_property_key"),
+                *[cleaned.get(k) for k in _FIELD_PROPERTY_KEYS],
             ]
         )
         if not has_any:
@@ -278,11 +354,13 @@ class SubProcessFieldForm(BootstrapFormMixin, forms.ModelForm):
             "sort_order",
             "help_text",
             "material_property_key",
+            "machine_property_key",
+            "labor_property_key",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        _configure_material_property_field(self)
+        _configure_all_property_fields(self)
 
     def clean_code(self):
         code = (self.cleaned_data["code"] or "").upper()
@@ -307,6 +385,8 @@ class SubProcessFieldInlineForm(BootstrapFormMixin, forms.ModelForm):
             "is_required",
             "sort_order",
             "material_property_key",
+            "machine_property_key",
+            "labor_property_key",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -314,7 +394,7 @@ class SubProcessFieldInlineForm(BootstrapFormMixin, forms.ModelForm):
         self.empty_permitted = True
         self.fields["code"].required = False
         self.fields["label"].required = False
-        _configure_material_property_field(self)
+        _configure_all_property_fields(self)
 
     def clean(self):
         cleaned = super().clean()
@@ -330,7 +410,7 @@ class SubProcessFieldInlineForm(BootstrapFormMixin, forms.ModelForm):
                 cleaned.get("default_value"),
                 cleaned.get("min_value") is not None,
                 cleaned.get("max_value") is not None,
-                cleaned.get("material_property_key"),
+                *[cleaned.get(k) for k in _FIELD_PROPERTY_KEYS],
             ]
         )
         if not has_any:
@@ -387,6 +467,8 @@ class ProcessLinkSubProcessesForm(BootstrapFormMixin, forms.Form):
 class QuoteAddProcessForm(BootstrapFormMixin, forms.Form):
     process = forms.ModelChoiceField(queryset=Process.objects.none())
     material = forms.ModelChoiceField(queryset=Material.objects.none(), required=False)
+    machine = forms.ModelChoiceField(queryset=Machine.objects.none(), required=False)
+    labor_role = forms.ModelChoiceField(queryset=LaborRole.objects.none(), required=False)
     notes = forms.CharField(required=False, max_length=255)
 
     def __init__(self, quote, *args, **kwargs):
@@ -399,6 +481,14 @@ class QuoteAddProcessForm(BootstrapFormMixin, forms.Form):
         self.fields["material"].queryset = mats
         self.fields["material"].required = False
         self.fields["material"].empty_label = "— No material —"
+        machines = Machine.objects.filter(plant=quote.plant, is_active=True).order_by("code")
+        self.fields["machine"].queryset = machines
+        self.fields["machine"].required = False
+        self.fields["machine"].empty_label = "— No machine —"
+        roles = LaborRole.objects.filter(plant=quote.plant, is_active=True).order_by("code")
+        self.fields["labor_role"].queryset = roles
+        self.fields["labor_role"].required = False
+        self.fields["labor_role"].empty_label = "— No labor role —"
 
 
 class QuoteAddSubProcessForm(BootstrapFormMixin, forms.Form):

@@ -6,7 +6,7 @@ in this flow. Material property injection is optional via material_bridge.
 """
 from django.db import models
 
-from apps.catalog.models import Material
+from apps.catalog.models import LaborRole, Machine, Material
 from apps.core.models import Plant
 
 
@@ -38,7 +38,15 @@ class Process(models.Model):
     # When False, material properties are never injected into this process formula namespace.
     use_material_properties = models.BooleanField(
         default=False,
-        help_text="If enabled, quote can pick a material and MAT_* properties enter the formula context.",
+        help_text="If enabled, quote can pick a material and auto-fill mapped process fields.",
+    )
+    use_machine_properties = models.BooleanField(
+        default=False,
+        help_text="If enabled, quote can pick a machine and auto-fill mapped process fields.",
+    )
+    use_labor_properties = models.BooleanField(
+        default=False,
+        help_text="If enabled, quote can pick a labor role and auto-fill mapped process fields.",
     )
     subprocesses = models.ManyToManyField(
         "SubProcess",
@@ -78,6 +86,14 @@ class SubProcess(models.Model):
     use_material_properties = models.BooleanField(
         default=False,
         help_text="If enabled, inherits material context from the parent quote process when available.",
+    )
+    use_machine_properties = models.BooleanField(
+        default=False,
+        help_text="If enabled, inherits machine context from the parent quote process when available.",
+    )
+    use_labor_properties = models.BooleanField(
+        default=False,
+        help_text="If enabled, inherits labor context from the parent quote process when available.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -132,6 +148,18 @@ class ProcessField(models.Model):
         default="",
         help_text="Optional. e.g. unit_price or a custom field key. Leave blank to disable.",
     )
+    machine_property_key = models.SlugField(
+        max_length=80,
+        blank=True,
+        default="",
+        help_text="Optional. e.g. hourly_rate or a machine custom field key.",
+    )
+    labor_property_key = models.SlugField(
+        max_length=80,
+        blank=True,
+        default="",
+        help_text="Optional. e.g. hourly_rate or a labor custom field key.",
+    )
 
     class Meta:
         unique_together = [("process", "code")]
@@ -159,6 +187,18 @@ class SubProcessField(models.Model):
         default="",
         help_text="Optional. e.g. unit_price or a custom field key. Leave blank to disable.",
     )
+    machine_property_key = models.SlugField(
+        max_length=80,
+        blank=True,
+        default="",
+        help_text="Optional. e.g. hourly_rate or a machine custom field key.",
+    )
+    labor_property_key = models.SlugField(
+        max_length=80,
+        blank=True,
+        default="",
+        help_text="Optional. e.g. hourly_rate or a labor custom field key.",
+    )
 
     class Meta:
         unique_together = [("subprocess", "code")]
@@ -176,6 +216,20 @@ class QuoteProcess(models.Model):
     process = models.ForeignKey(Process, on_delete=models.PROTECT, related_name="quote_usages")
     material = models.ForeignKey(
         Material,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="quote_processes",
+    )
+    machine = models.ForeignKey(
+        Machine,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="quote_processes",
+    )
+    labor_role = models.ForeignKey(
+        LaborRole,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

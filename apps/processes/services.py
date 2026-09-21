@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from apps.costing.engine import FormulaError, evaluate_expression, validate_formula_against_fields, validate_identifier
 
-from . import material_bridge
+from . import labor_bridge, machine_bridge, material_bridge
 
 
 def _num(value, default=0.0):
@@ -68,12 +68,28 @@ def calculate_quote_process(qp) -> dict:
     """Compute own + subprocess totals for one QuoteProcess; persist snapshots."""
     process = qp.process
     value_map = {fv.field_code: fv.value for fv in qp.field_values.all()}
-    # Auto-fill from material property keys when empty
+    # Auto-fill from catalog property keys when empty
     if process.use_material_properties and qp.material_id:
         for f in process.fields.all():
             if f.material_property_key and not value_map.get(f.code):
                 resolved = material_bridge.resolve_material_property(
                     qp.material, f.material_property_key
+                )
+                if resolved is not None and resolved != "":
+                    value_map[f.code] = str(resolved)
+    if process.use_machine_properties and qp.machine_id:
+        for f in process.fields.all():
+            if f.machine_property_key and not value_map.get(f.code):
+                resolved = machine_bridge.resolve_machine_property(
+                    qp.machine, f.machine_property_key
+                )
+                if resolved is not None and resolved != "":
+                    value_map[f.code] = str(resolved)
+    if process.use_labor_properties and qp.labor_role_id:
+        for f in process.fields.all():
+            if f.labor_property_key and not value_map.get(f.code):
+                resolved = labor_bridge.resolve_labor_property(
+                    qp.labor_role, f.labor_property_key
                 )
                 if resolved is not None and resolved != "":
                     value_map[f.code] = str(resolved)
@@ -93,6 +109,22 @@ def calculate_quote_process(qp) -> dict:
                 if f.material_property_key and not sp_map.get(f.code):
                     resolved = material_bridge.resolve_material_property(
                         qp.material, f.material_property_key
+                    )
+                    if resolved is not None and resolved != "":
+                        sp_map[f.code] = str(resolved)
+        if sp.use_machine_properties and qp.machine_id:
+            for f in sp.fields.all():
+                if f.machine_property_key and not sp_map.get(f.code):
+                    resolved = machine_bridge.resolve_machine_property(
+                        qp.machine, f.machine_property_key
+                    )
+                    if resolved is not None and resolved != "":
+                        sp_map[f.code] = str(resolved)
+        if sp.use_labor_properties and qp.labor_role_id:
+            for f in sp.fields.all():
+                if f.labor_property_key and not sp_map.get(f.code):
+                    resolved = labor_bridge.resolve_labor_property(
+                        qp.labor_role, f.labor_property_key
                     )
                     if resolved is not None and resolved != "":
                         sp_map[f.code] = str(resolved)
@@ -132,7 +164,9 @@ def calculate_quote_processes(quote) -> dict:
     processes_data = []
     money_total = 0.0
     time_total = 0.0
-    for qp in quote.quote_processes.select_related("process", "material").prefetch_related(
+    for qp in quote.quote_processes.select_related(
+        "process", "material", "machine", "labor_role"
+    ).prefetch_related(
         "field_values",
         "process__fields",
         "subprocesses__field_values",

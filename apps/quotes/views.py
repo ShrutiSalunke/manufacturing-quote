@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -14,7 +14,7 @@ from apps.templates_engine.models import ProductTemplate
 
 from .forms import CustomerForm, QuoteForm, QuoteLineForm, QuoteLineParametersForm
 from .models import Customer, Quote, QuoteDocument, QuoteLine, QuoteLineParameterValue
-from .pdf import generate_quote_pdf
+from .pdf import generate_quote_pdf, render_quote_pdf_bytes
 from . import weight_calculator as weight_calc
 
 CLIENT_PER_PAGE_CHOICES = (10, 15, 25, 50)
@@ -419,6 +419,41 @@ def quote_pdf(request, pk):
 
 
 @login_required
+def quote_preview_pdf(request, pk):
+    """Inline PDF for browser viewer (list / detail preview)."""
+    quote = get_object_or_404(
+        Quote.objects.select_related("customer", "plant", "calculation").prefetch_related(
+            "lines",
+            "quote_processes__process",
+            "quote_processes__subprocesses__subprocess",
+        ),
+        pk=pk,
+    )
+    if quote.status not in (Quote.Status.CALCULATED, Quote.Status.ISSUED):
+        messages.error(request, "Calculate the quote before previewing the PDF.")
+        return redirect("quotes:quote_list")
+    try:
+        pdf_bytes = render_quote_pdf_bytes(quote)
+    except Exception as exc:
+        messages.error(request, f"PDF preview failed: {exc}")
+        return redirect("quotes:quote_list")
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'inline; filename="{quote.number}_preview.pdf"'
+    return response
+
+
+@admin_required
+def quote_permanent_delete(request, pk):
+    """Hard-delete a quote and cascaded lines / processes / documents."""
+    quote = get_object_or_404(Quote, pk=pk)
+    if request.method == "POST":
+        number = quote.number
+        quote.delete()
+        messages.success(request, f"Quote {number} permanently deleted.")
+    return redirect("quotes:quote_list")
+
+
+@login_required
 def quote_issue(request, pk):
     quote = get_object_or_404(Quote, pk=pk)
     if request.method == "POST":
@@ -440,6 +475,8 @@ def quote_clone_version(request, pk):
             "lines__template",
             "quote_processes__process",
             "quote_processes__material",
+            "quote_processes__machine",
+            "quote_processes__labor_role",
             "quote_processes__field_values",
             "quote_processes__subprocesses__subprocess",
             "quote_processes__subprocesses__field_values",
@@ -484,6 +521,8 @@ def quote_clone_version(request, pk):
             quote=new,
             process=qp.process,
             material=qp.material,
+            machine=qp.machine,
+            labor_role=qp.labor_role,
             sort_order=qp.sort_order,
             notes=qp.notes,
         )

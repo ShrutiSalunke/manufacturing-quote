@@ -26,7 +26,16 @@ class ProcessSubProcessLinkInline(admin.TabularInline):
 
 @admin.register(Process)
 class ProcessAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "plant", "result_unit", "is_active", "use_material_properties")
+    list_display = (
+        "code",
+        "name",
+        "plant",
+        "result_unit",
+        "is_active",
+        "use_material_properties",
+        "use_machine_properties",
+        "use_labor_properties",
+    )
     list_filter = ("plant", "is_active", "result_unit")
     search_fields = ("code", "name")
     inlines = [ProcessFieldInline, ProcessSubProcessLinkInline]
@@ -39,7 +48,16 @@ class SubProcessFieldInline(admin.TabularInline):
 
 @admin.register(SubProcess)
 class SubProcessAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "plant", "result_unit", "is_active", "use_material_properties")
+    list_display = (
+        "code",
+        "name",
+        "plant",
+        "result_unit",
+        "is_active",
+        "use_material_properties",
+        "use_machine_properties",
+        "use_labor_properties",
+    )
     list_filter = ("plant", "is_active", "result_unit")
     search_fields = ("code", "name")
     inlines = [SubProcessFieldInline]
@@ -58,7 +76,7 @@ class QuoteSubProcessInline(admin.TabularInline):
 
 @admin.register(QuoteProcess)
 class QuoteProcessAdmin(admin.ModelAdmin):
-    list_display = ("quote", "process", "material", "computed_own", "computed_total")
+    list_display = ("quote", "process", "material", "machine", "labor_role", "computed_own", "computed_total")
     inlines = [QuoteProcessFieldValueInline, QuoteSubProcessInline]
 
 

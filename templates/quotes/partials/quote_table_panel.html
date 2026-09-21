@@ -45,6 +45,47 @@
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                 </a>
+                {% if q.is_editable %}
+                <a class="mq-icon-btn mq-icon-btn-edit" href="{% url 'quotes:wizard_step' q.pk 'details' %}" title="Edit quote" aria-label="Edit {{ q.number }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                </a>
+                {% endif %}
+                {% if q.status == "CALCULATED" or q.status == "ISSUED" %}
+                <a class="mq-icon-btn mq-icon-btn-view" href="{% url 'quotes:quote_preview_pdf' q.pk %}" target="_blank" rel="noopener" title="Preview PDF" aria-label="Preview PDF {{ q.number }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <path d="M14 2v6h6"></path>
+                    <path d="M8 13h8"></path>
+                    <path d="M8 17h5"></path>
+                  </svg>
+                </a>
+                {% endif %}
+                {% if user.is_app_admin %}
+                <form method="post" action="{% url 'quotes:quote_permanent_delete' q.pk %}">{% csrf_token %}
+                  <button
+                    class="mq-icon-btn mq-icon-btn-delete"
+                    type="submit"
+                    title="Permanently delete"
+                    aria-label="Permanently delete {{ q.number }}"
+                    data-mq-confirm-submit
+                    data-mq-title="Permanently delete quote?"
+                    data-mq-message="{{ q.number }} and all of its lines, processes, and PDFs will be removed forever."
+                    data-mq-confirm-label="Delete permanently"
+                    data-mq-variant="danger"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                      <path d="M10 11v6"></path>
+                      <path d="M14 11v6"></path>
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                    </svg>
+                  </button>
+                </form>
+                {% endif %}
               </div>
             </td>
           </tr>

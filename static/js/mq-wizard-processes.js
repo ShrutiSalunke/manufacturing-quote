@@ -162,7 +162,19 @@
         '<select class="form-select mq-material-select" name="' +
         pfx +
         'material_id">' +
-        '<option value="">Select material…</option></select></div></div>' +
+        '<option value="">Select material…</option></select></div>' +
+        '<div class="col-md-6 d-none mq-machine-wrap">' +
+        '<label class="form-label">Machine</label>' +
+        '<select class="form-select mq-machine-select" name="' +
+        pfx +
+        'machine_id">' +
+        '<option value="">Select machine…</option></select></div>' +
+        '<div class="col-md-6 d-none mq-labor-wrap">' +
+        '<label class="form-label">Labor role</label>' +
+        '<select class="form-select mq-labor-select" name="' +
+        pfx +
+        'labor_id">' +
+        '<option value="">Select labor role…</option></select></div></div>' +
         '<div class="row g-3 mt-1 mq-process-fields"></div>' +
         '<div class="mt-3 d-none mq-subprocess-section">' +
         '<h3 class="mq-wizard-section-title mb-2">Sub processes</h3>' +
@@ -177,6 +189,10 @@
       var processSelect = card.querySelector(".mq-process-select");
       var materialWrap = card.querySelector(".mq-material-wrap");
       var materialSelect = card.querySelector(".mq-material-select");
+      var machineWrap = card.querySelector(".mq-machine-wrap");
+      var machineSelect = card.querySelector(".mq-machine-select");
+      var laborWrap = card.querySelector(".mq-labor-wrap");
+      var laborSelect = card.querySelector(".mq-labor-select");
       var fieldsEl = card.querySelector(".mq-process-fields");
       var subSection = card.querySelector(".mq-subprocess-section");
       var subRows = card.querySelector(".mq-subprocess-rows");
@@ -188,21 +204,25 @@
         fieldsEl.innerHTML = "";
         materialWrap.classList.add("d-none");
         materialSelect.innerHTML = '<option value="">Select material…</option>';
+        machineWrap.classList.add("d-none");
+        machineSelect.innerHTML = '<option value="">Select machine…</option>';
+        laborWrap.classList.add("d-none");
+        laborSelect.innerHTML = '<option value="">Select labor role…</option>';
         subSection.classList.add("d-none");
         subRows.innerHTML = "";
         subCountInput.value = "0";
       }
 
-      function renderMaterials(schema, selectedId) {
-        if (!schema.process.use_material_properties) {
-          materialWrap.classList.add("d-none");
-          materialSelect.innerHTML = '<option value="">Select material…</option>';
+      function renderCatalogSelect(wrap, select, enabled, items, selectedId, emptyLabel) {
+        if (!enabled) {
+          wrap.classList.add("d-none");
+          select.innerHTML = '<option value="">' + emptyLabel + "</option>";
           return;
         }
-        materialWrap.classList.remove("d-none");
-        var pick = selectedId || preferredMaterialId || "";
-        var html = '<option value="">Select material…</option>';
-        (schema.materials || []).forEach(function (m) {
+        wrap.classList.remove("d-none");
+        var pick = selectedId || "";
+        var html = '<option value="">' + emptyLabel + "</option>";
+        (items || []).forEach(function (m) {
           html +=
             '<option value="' +
             m.id +
@@ -212,11 +232,44 @@
             escapeHtml(m.label) +
             "</option>";
         });
-        materialSelect.innerHTML = html;
-        if (pick && !selectedId) {
-          // Trigger autofill for preferred material from weight step
+        select.innerHTML = html;
+      }
+
+      function renderMaterials(schema, selectedId) {
+        var pick = selectedId || preferredMaterialId || "";
+        renderCatalogSelect(
+          materialWrap,
+          materialSelect,
+          schema.process.use_material_properties,
+          schema.materials,
+          pick,
+          "Select material…"
+        );
+        if (schema.process.use_material_properties && pick && !selectedId) {
           applyAutofill();
         }
+      }
+
+      function renderMachines(schema, selectedId) {
+        renderCatalogSelect(
+          machineWrap,
+          machineSelect,
+          schema.process.use_machine_properties,
+          schema.machines,
+          selectedId || "",
+          "Select machine…"
+        );
+      }
+
+      function renderLabor(schema, selectedId) {
+        renderCatalogSelect(
+          laborWrap,
+          laborSelect,
+          schema.process.use_labor_properties,
+          schema.labor_roles,
+          selectedId || "",
+          "Select labor role…"
+        );
       }
 
       function renderProcessFields(schema, values) {
@@ -340,6 +393,8 @@
         options = options || {};
         schemas[bi] = schema;
         renderMaterials(schema, options.material_id);
+        renderMachines(schema, options.machine_id);
+        renderLabor(schema, options.labor_id);
         renderProcessFields(schema, options.values || {});
         subRows.innerHTML = "";
         subCountInput.value = "0";
@@ -381,13 +436,19 @@
 
       function applyAutofill() {
         var schema = schemas[bi];
-        if (!schema || !materialSelect.value) return;
-        var url =
-          autofillUrl +
-          "?process_id=" +
-          encodeURIComponent(schema.process.id) +
-          "&material_id=" +
-          encodeURIComponent(materialSelect.value);
+        if (!schema) return;
+        var params = ["process_id=" + encodeURIComponent(schema.process.id)];
+        if (materialSelect.value) {
+          params.push("material_id=" + encodeURIComponent(materialSelect.value));
+        }
+        if (machineSelect.value) {
+          params.push("machine_id=" + encodeURIComponent(machineSelect.value));
+        }
+        if (laborSelect.value) {
+          params.push("labor_id=" + encodeURIComponent(laborSelect.value));
+        }
+        if (params.length < 2) return;
+        var url = autofillUrl + "?" + params.join("&");
         fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" })
           .then(function (r) {
             return r.json();
@@ -424,6 +485,8 @@
         loadSchema(processSelect.value, {});
       });
       materialSelect.addEventListener("change", applyAutofill);
+      machineSelect.addEventListener("change", applyAutofill);
+      laborSelect.addEventListener("change", applyAutofill);
       addSubBtn.addEventListener("click", function () {
         if (!schemas[bi]) {
           alert("Select a process first.");
@@ -447,6 +510,8 @@
       if (initial && initial.process) {
         applySchema(initial, {
           material_id: initial.material_id,
+          machine_id: initial.machine_id,
+          labor_id: initial.labor_id,
           values: initial.values,
           selected_subprocess_ids: initial.selected_subprocess_ids,
           subprocess_values: initial.subprocess_values,

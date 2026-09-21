@@ -53,6 +53,12 @@ urlpatterns = [
     path("<int:quote_pk>/lines/<int:line_pk>/parameters/", views.line_parameters, name="line_parameters"),
     path("<int:pk>/calculate/", views.quote_calculate, name="quote_calculate"),
     path("<int:pk>/pdf/", views.quote_pdf, name="quote_pdf"),
+    path("<int:pk>/preview/pdf/", views.quote_preview_pdf, name="quote_preview_pdf"),
     path("<int:pk>/issue/", views.quote_issue, name="quote_issue"),
     path("<int:pk>/clone/", views.quote_clone_version, name="quote_clone"),
+    path(
+        "<int:pk>/permanent-delete/",
+        views.quote_permanent_delete,
+        name="quote_permanent_delete",
+    ),
 ]

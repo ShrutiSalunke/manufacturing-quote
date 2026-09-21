@@ -64,6 +64,14 @@
           <div class="mq-detail-label">Material properties</div>
           <div class="mq-detail-value">{% if process.use_material_properties %}Enabled{% else %}Off{% endif %}</div>
         </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Machine properties</div>
+          <div class="mq-detail-value">{% if process.use_machine_properties %}Enabled{% else %}Off{% endif %}</div>
+        </div>
+        <div class="mq-detail-item">
+          <div class="mq-detail-label">Labor properties</div>
+          <div class="mq-detail-value">{% if process.use_labor_properties %}Enabled{% else %}Off{% endif %}</div>
+        </div>
         <div class="mq-detail-item mq-field-span-2">
           <div class="mq-detail-label">Description</div>
           <div class="mq-detail-value">{{ process.description|default:"—" }}</div>

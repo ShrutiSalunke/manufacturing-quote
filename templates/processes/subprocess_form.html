@@ -105,6 +105,18 @@
               {% if fform.material_property_key.help_text %}<div class="mq-help">{{ fform.material_property_key.help_text }}</div>{% endif %}
               {% for e in fform.material_property_key.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
             </div>
+            <div class="mq-field mq-field-span-2">
+              <label class="mq-label">{{ fform.machine_property_key.label }}</label>
+              {{ fform.machine_property_key }}
+              {% if fform.machine_property_key.help_text %}<div class="mq-help">{{ fform.machine_property_key.help_text }}</div>{% endif %}
+              {% for e in fform.machine_property_key.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mq-field mq-field-span-2">
+              <label class="mq-label">{{ fform.labor_property_key.label }}</label>
+              {{ fform.labor_property_key }}
+              {% if fform.labor_property_key.help_text %}<div class="mq-help">{{ fform.labor_property_key.help_text }}</div>{% endif %}
+              {% for e in fform.labor_property_key.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+            </div>
             <div class="mq-field mq-inline-row-actions">
               <label class="mq-check-label">{{ fform.is_required }} <span>Required</span></label>
               <button type="button" class="btn btn-sm btn-outline-danger" data-mq-remove-field>Remove</button>
@@ -156,6 +168,16 @@
               {{ formset.empty_form.material_property_key }}
               {% if formset.empty_form.material_property_key.help_text %}<div class="mq-help">{{ formset.empty_form.material_property_key.help_text }}</div>{% endif %}
             </div>
+            <div class="mq-field mq-field-span-2">
+              <label class="mq-label">{{ formset.empty_form.machine_property_key.label }}</label>
+              {{ formset.empty_form.machine_property_key }}
+              {% if formset.empty_form.machine_property_key.help_text %}<div class="mq-help">{{ formset.empty_form.machine_property_key.help_text }}</div>{% endif %}
+            </div>
+            <div class="mq-field mq-field-span-2">
+              <label class="mq-label">{{ formset.empty_form.labor_property_key.label }}</label>
+              {{ formset.empty_form.labor_property_key }}
+              {% if formset.empty_form.labor_property_key.help_text %}<div class="mq-help">{{ formset.empty_form.labor_property_key.help_text }}</div>{% endif %}
+            </div>
             <div class="mq-field mq-inline-row-actions">
               <label class="mq-check-label">{{ formset.empty_form.is_required }} <span>Required</span></label>
               <button type="button" class="btn btn-sm btn-outline-danger" data-mq-remove-field>Remove</button>
@@ -186,6 +208,22 @@
           </label>
           {% if form.use_material_properties.help_text %}<div class="mq-help">{{ form.use_material_properties.help_text }}</div>{% endif %}
           {% for e in form.use_material_properties.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field mq-field-check">
+          <label class="mq-check-label" for="{{ form.use_machine_properties.id_for_label }}">
+            {{ form.use_machine_properties }}
+            <span>{{ form.use_machine_properties.label }}</span>
+          </label>
+          {% if form.use_machine_properties.help_text %}<div class="mq-help">{{ form.use_machine_properties.help_text }}</div>{% endif %}
+          {% for e in form.use_machine_properties.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field mq-field-check">
+          <label class="mq-check-label" for="{{ form.use_labor_properties.id_for_label }}">
+            {{ form.use_labor_properties }}
+            <span>{{ form.use_labor_properties.label }}</span>
+          </label>
+          {% if form.use_labor_properties.help_text %}<div class="mq-help">{{ form.use_labor_properties.help_text }}</div>{% endif %}
+          {% for e in form.use_labor_properties.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
         </div>
         <div class="mq-field mq-field-check">
           <label class="mq-check-label" for="{{ form.is_active.id_for_label }}">
