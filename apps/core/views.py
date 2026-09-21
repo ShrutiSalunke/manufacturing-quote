@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from apps.core.decorators import require_perm
 from django.db.models import Count, Q
 from django.shortcuts import render
 from django.utils import timezone
@@ -25,7 +26,7 @@ def _time_greeting():
     return "Good evening"
 
 
-@login_required
+@require_perm("dashboard", "view")
 def dashboard(request):
     quote_stats = Quote.objects.aggregate(
         draft_count=Count("id", filter=Q(status=Quote.Status.DRAFT)),

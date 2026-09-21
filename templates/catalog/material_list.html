@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static mq_perms %}
 {% block title %}Materials{% endblock %}
 {% block extra_css %}
 <link href="{% static 'css/master-table.css' %}" rel="stylesheet">
@@ -51,7 +51,8 @@
       </div>
 
       <a class="btn btn-outline-secondary mq-master-add" href="{% url 'imports_excel:hub' %}">Import</a>
-      {% if user.is_app_admin %}
+      {% can "materials" "create" as can_create %}
+      {% if can_create %}
       <a class="btn mq-btn-theme mq-master-add" href="{% url 'catalog:material_create' %}">Add Material</a>
       {% endif %}
     </form>

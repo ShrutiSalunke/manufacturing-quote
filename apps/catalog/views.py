@@ -1,11 +1,10 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from apps.core.decorators import admin_required
+from apps.core.decorators import require_perm
 
 from . import custom_fields as cf
 from .forms import CustomFieldForm, LaborRoleForm, MachineForm, MaterialForm
@@ -186,7 +185,7 @@ def _save_master_with_custom(
 # —— Materials ——
 
 
-@login_required
+@require_perm("materials", "view")
 def material_list(request):
     qs = Material.objects.select_related("plant").order_by("code")
     return _list_page(
@@ -201,7 +200,7 @@ def material_list(request):
     )
 
 
-@login_required
+@require_perm("materials", "view")
 def material_detail(request, pk):
     material = get_object_or_404(Material.objects.select_related("plant"), pk=pk)
     definitions = cf.active_definitions(
@@ -217,7 +216,7 @@ def material_detail(request, pk):
     )
 
 
-@admin_required
+@require_perm("materials", "create")
 def material_create(request):
     return _save_master_with_custom(
         request,
@@ -231,7 +230,7 @@ def material_create(request):
     )
 
 
-@admin_required
+@require_perm("materials", "edit")
 def material_edit(request, pk):
     obj = get_object_or_404(Material, pk=pk)
     return _save_master_with_custom(
@@ -255,7 +254,7 @@ def _safe_material_next(request, pk):
     return None
 
 
-@admin_required
+@require_perm("materials", "soft_delete")
 def material_soft_delete(request, pk):
     obj = get_object_or_404(Material, pk=pk)
     if request.method == "POST":
@@ -271,7 +270,7 @@ def material_soft_delete(request, pk):
     return redirect(_safe_material_next(request, pk) or "catalog:material_list")
 
 
-@admin_required
+@require_perm("materials", "soft_delete")
 def material_restore(request, pk):
     obj = get_object_or_404(Material, pk=pk)
     if request.method == "POST":
@@ -284,7 +283,7 @@ def material_restore(request, pk):
     return redirect(_safe_material_next(request, pk) or "catalog:material_list")
 
 
-@admin_required
+@require_perm("materials", "permanent_delete")
 def material_permanent_delete(request, pk):
     obj = get_object_or_404(Material, pk=pk)
     if request.method == "POST":
@@ -301,7 +300,7 @@ def material_permanent_delete(request, pk):
 # —— Machines ——
 
 
-@login_required
+@require_perm("machines", "view")
 def machine_list(request):
     qs = Machine.objects.select_related("plant").order_by("code")
     return _list_page(
@@ -316,7 +315,7 @@ def machine_list(request):
     )
 
 
-@login_required
+@require_perm("machines", "view")
 def machine_detail(request, pk):
     machine = get_object_or_404(Machine.objects.select_related("plant"), pk=pk)
     definitions = cf.active_definitions(
@@ -332,7 +331,7 @@ def machine_detail(request, pk):
     )
 
 
-@admin_required
+@require_perm("machines", "create")
 def machine_create(request):
     return _save_master_with_custom(
         request,
@@ -346,7 +345,7 @@ def machine_create(request):
     )
 
 
-@admin_required
+@require_perm("machines", "edit")
 def machine_edit(request, pk):
     obj = get_object_or_404(Machine, pk=pk)
     return _save_master_with_custom(
@@ -361,7 +360,7 @@ def machine_edit(request, pk):
     )
 
 
-@admin_required
+@require_perm("machines", "soft_delete")
 def machine_soft_delete(request, pk):
     obj = get_object_or_404(Machine, pk=pk)
     if request.method == "POST":
@@ -374,7 +373,7 @@ def machine_soft_delete(request, pk):
     return redirect("catalog:machine_list")
 
 
-@admin_required
+@require_perm("machines", "soft_delete")
 def machine_restore(request, pk):
     obj = get_object_or_404(Machine, pk=pk)
     if request.method == "POST":
@@ -387,7 +386,7 @@ def machine_restore(request, pk):
     return redirect("catalog:machine_list")
 
 
-@admin_required
+@require_perm("machines", "permanent_delete")
 def machine_permanent_delete(request, pk):
     obj = get_object_or_404(Machine, pk=pk)
     if request.method == "POST":
@@ -400,7 +399,7 @@ def machine_permanent_delete(request, pk):
 # —— Labor roles ——
 
 
-@login_required
+@require_perm("labor", "view")
 def labor_list(request):
     qs = LaborRole.objects.select_related("plant").order_by("code")
     return _list_page(
@@ -415,7 +414,7 @@ def labor_list(request):
     )
 
 
-@login_required
+@require_perm("labor", "view")
 def labor_detail(request, pk):
     role = get_object_or_404(LaborRole.objects.select_related("plant"), pk=pk)
     definitions = cf.active_definitions(
@@ -431,7 +430,7 @@ def labor_detail(request, pk):
     )
 
 
-@admin_required
+@require_perm("labor", "create")
 def labor_create(request):
     return _save_master_with_custom(
         request,
@@ -445,7 +444,7 @@ def labor_create(request):
     )
 
 
-@admin_required
+@require_perm("labor", "edit")
 def labor_edit(request, pk):
     obj = get_object_or_404(LaborRole, pk=pk)
     return _save_master_with_custom(
@@ -460,7 +459,7 @@ def labor_edit(request, pk):
     )
 
 
-@admin_required
+@require_perm("labor", "soft_delete")
 def labor_soft_delete(request, pk):
     obj = get_object_or_404(LaborRole, pk=pk)
     if request.method == "POST":
@@ -473,7 +472,7 @@ def labor_soft_delete(request, pk):
     return redirect("catalog:labor_list")
 
 
-@admin_required
+@require_perm("labor", "soft_delete")
 def labor_restore(request, pk):
     obj = get_object_or_404(LaborRole, pk=pk)
     if request.method == "POST":
@@ -486,7 +485,7 @@ def labor_restore(request, pk):
     return redirect("catalog:labor_list")
 
 
-@admin_required
+@require_perm("labor", "permanent_delete")
 def labor_permanent_delete(request, pk):
     obj = get_object_or_404(LaborRole, pk=pk)
     if request.method == "POST":
@@ -499,7 +498,7 @@ def labor_permanent_delete(request, pk):
 # —— Custom fields ——
 
 
-@admin_required
+@require_perm("custom_fields", "view")
 def custom_field_list(request):
     fields = CustomFieldDefinition.objects.select_related("plant").order_by(
         "entity_type", "sort_order", "key"
@@ -507,13 +506,13 @@ def custom_field_list(request):
     return render(request, "catalog/custom_field_list.html", {"fields": fields})
 
 
-@admin_required
+@require_perm("custom_fields", "view")
 def custom_field_detail(request, pk):
     field = get_object_or_404(CustomFieldDefinition.objects.select_related("plant"), pk=pk)
     return render(request, "catalog/custom_field_detail.html", {"field": field})
 
 
-@admin_required
+@require_perm("custom_fields", "create")
 def custom_field_create(request):
     if request.method == "POST":
         form = CustomFieldForm(request.POST)
@@ -538,7 +537,7 @@ def custom_field_create(request):
     )
 
 
-@admin_required
+@require_perm("custom_fields", "edit")
 def custom_field_edit(request, pk):
     field = get_object_or_404(CustomFieldDefinition, pk=pk)
     if request.method == "POST":
@@ -564,7 +563,7 @@ def _safe_custom_field_next(request, pk):
     return None
 
 
-@admin_required
+@require_perm("custom_fields", "soft_delete")
 def custom_field_soft_delete(request, pk):
     field = get_object_or_404(CustomFieldDefinition, pk=pk)
     if request.method == "POST":
@@ -581,7 +580,7 @@ def custom_field_soft_delete(request, pk):
     return redirect(_safe_custom_field_next(request, pk) or "catalog:custom_field_list")
 
 
-@admin_required
+@require_perm("custom_fields", "soft_delete")
 def custom_field_restore(request, pk):
     field = get_object_or_404(CustomFieldDefinition, pk=pk)
     if request.method == "POST":
@@ -594,7 +593,7 @@ def custom_field_restore(request, pk):
     return redirect(_safe_custom_field_next(request, pk) or "catalog:custom_field_list")
 
 
-@admin_required
+@require_perm("custom_fields", "permanent_delete")
 def custom_field_permanent_delete(request, pk):
     field = get_object_or_404(CustomFieldDefinition, pk=pk)
     if request.method == "POST":

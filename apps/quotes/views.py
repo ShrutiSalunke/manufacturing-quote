@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.core.decorators import admin_required
+from apps.core.decorators import require_perm
 from apps.costing.engine import FormulaError
 from apps.costing.services import calculate_quote
 from apps.templates_engine.models import ProductTemplate
@@ -42,7 +42,7 @@ def _page_number_window(page_obj, adjacent=1):
     return result
 
 
-@login_required
+@require_perm("clients", "view")
 def client_list(request):
     qs = Customer.objects.all().order_by("-created_at", "-id")
     q = (request.GET.get("q") or "").strip()
@@ -86,7 +86,7 @@ def client_list(request):
     return render(request, template, context)
 
 
-@login_required
+@require_perm("clients", "view")
 def client_detail(request, pk):
     client = get_object_or_404(Customer, pk=pk)
     qs = client.quotes.select_related("plant").order_by("-created_at", "-id")
@@ -116,7 +116,7 @@ def client_detail(request, pk):
     return render(request, template, context)
 
 
-@admin_required
+@require_perm("clients", "create")
 def client_create(request):
     if request.method == "POST":
         form = CustomerForm(request.POST)
@@ -142,7 +142,7 @@ def client_create(request):
     )
 
 
-@admin_required
+@require_perm("clients", "edit")
 def client_edit(request, pk):
     client = get_object_or_404(Customer, pk=pk)
     if request.method == "POST":
@@ -169,7 +169,7 @@ def client_edit(request, pk):
     )
 
 
-@admin_required
+@require_perm("clients", "soft_delete")
 def client_soft_delete(request, pk):
     """Soft delete: mark client inactive. Row is kept for existing quotes."""
     client = get_object_or_404(Customer, pk=pk)
@@ -186,7 +186,7 @@ def client_soft_delete(request, pk):
     return redirect("quotes:client_list")
 
 
-@admin_required
+@require_perm("clients", "soft_delete")
 def client_restore(request, pk):
     """Restore a soft-deleted client (set active again)."""
     client = get_object_or_404(Customer, pk=pk)
@@ -200,7 +200,7 @@ def client_restore(request, pk):
     return redirect("quotes:client_list")
 
 
-@admin_required
+@require_perm("clients", "permanent_delete")
 def client_permanent_delete(request, pk):
     """Hard-delete client. Related quotes keep rows with customer set to NULL."""
     client = get_object_or_404(Customer, pk=pk)
@@ -214,7 +214,7 @@ def client_permanent_delete(request, pk):
     return redirect("quotes:client_list")
 
 
-@login_required
+@require_perm("quotes", "view")
 def quote_list(request):
     qs = Quote.objects.select_related("customer", "plant", "created_by").order_by(
         "-created_at", "-id"
@@ -264,7 +264,7 @@ def quote_list(request):
     return render(request, template, context)
 
 
-@login_required
+@require_perm("quotes", "create")
 def quote_create(request):
     if request.method == "POST":
         qform = QuoteForm(request.POST)
@@ -280,7 +280,7 @@ def quote_create(request):
     return render(request, "quotes/quote_form.html", {"qform": qform})
 
 
-@login_required
+@require_perm("quotes", "view")
 def quote_detail(request, pk):
     quote = get_object_or_404(
         Quote.objects.select_related(
@@ -329,7 +329,7 @@ def quote_detail(request, pk):
     )
 
 
-@login_required
+@require_perm("quotes", "edit")
 def quote_add_line(request, pk):
     quote = get_object_or_404(Quote, pk=pk)
     if not quote.is_editable:
@@ -353,7 +353,7 @@ def quote_add_line(request, pk):
     return render(request, "quotes/add_line.html", {"quote": quote, "form": form})
 
 
-@login_required
+@require_perm("quotes", "edit")
 def line_parameters(request, quote_pk, line_pk):
     quote = get_object_or_404(Quote, pk=quote_pk)
     line = get_object_or_404(QuoteLine.objects.select_related("template"), pk=line_pk, quote=quote)
@@ -377,7 +377,7 @@ def line_parameters(request, quote_pk, line_pk):
     return render(request, "quotes/line_parameters.html", {"quote": quote, "line": line, "form": form})
 
 
-@login_required
+@require_perm("quotes", "calculate")
 def quote_calculate(request, pk):
     quote = get_object_or_404(Quote, pk=pk)
     if not quote.is_editable:
@@ -400,7 +400,7 @@ def quote_calculate(request, pk):
     return redirect("quotes:quote_detail", pk=pk)
 
 
-@login_required
+@require_perm("quotes", "preview_pdf")
 def quote_pdf(request, pk):
     quote = get_object_or_404(Quote, pk=pk)
     if quote.status not in (Quote.Status.CALCULATED, Quote.Status.ISSUED):
@@ -418,7 +418,7 @@ def quote_pdf(request, pk):
         return redirect("quotes:quote_detail", pk=pk)
 
 
-@login_required
+@require_perm("quotes", "preview_pdf")
 def quote_preview_pdf(request, pk):
     """Inline PDF for browser viewer (list / detail preview)."""
     quote = get_object_or_404(
@@ -442,7 +442,7 @@ def quote_preview_pdf(request, pk):
     return response
 
 
-@admin_required
+@require_perm("quotes", "permanent_delete")
 def quote_permanent_delete(request, pk):
     """Hard-delete a quote and cascaded lines / processes / documents."""
     quote = get_object_or_404(Quote, pk=pk)
@@ -453,7 +453,7 @@ def quote_permanent_delete(request, pk):
     return redirect("quotes:quote_list")
 
 
-@login_required
+@require_perm("quotes", "issue")
 def quote_issue(request, pk):
     quote = get_object_or_404(Quote, pk=pk)
     if request.method == "POST":
@@ -467,7 +467,7 @@ def quote_issue(request, pk):
     return redirect("quotes:quote_detail", pk=pk)
 
 
-@login_required
+@require_perm("quotes", "clone")
 def quote_clone_version(request, pk):
     source = get_object_or_404(
         Quote.objects.select_related("plant", "customer").prefetch_related(

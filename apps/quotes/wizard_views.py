@@ -6,6 +6,7 @@ Navigation is driven by apps.quotes.wizard.QUOTE_WIZARD_STEPS so Machine / Labor
 """
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from apps.core.decorators import require_perm
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -74,20 +75,20 @@ def _redirect_to_step(step_id, quote=None):
     return redirect(_step_url(step_id, quote))
 
 
-@login_required
+@require_perm("quotes", "create")
 def wizard_start(request):
     """Entry point — always begins at the first enabled step."""
     first = enabled_steps()[0]
     return _redirect_to_step(first.id)
 
 
-@login_required
+@require_perm("quotes", "create")
 def quote_create(request):
     """Keep URL name; send New Quote into the wizard."""
     return wizard_start(request)
 
 
-@login_required
+@require_perm("quotes", "create")
 def wizard_step_new(request, step_id):
     """Steps that do not yet have a quote (details only today)."""
     step = get_step(step_id)
@@ -99,7 +100,7 @@ def wizard_step_new(request, step_id):
     return _dispatch_step(request, step_id, quote=None)
 
 
-@login_required
+@require_perm("quotes", "edit")
 def wizard_step(request, quote_pk, step_id):
     step = get_step(step_id)
     if not step or not step.enabled:

@@ -2,6 +2,7 @@ import uuid
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from apps.core.decorators import require_perm
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -9,7 +10,7 @@ from apps.imports_excel.models import ImportJob
 from apps.imports_excel.services import generate_template_workbook, import_workbook
 
 
-@login_required
+@require_perm("imports", "view")
 def imports_hub(request):
     jobs = ImportJob.objects.select_related("created_by").prefetch_related("row_errors")[:20]
     cards = [
@@ -25,7 +26,7 @@ def imports_hub(request):
     return render(request, "imports_excel/hub.html", {"cards": cards, "jobs": jobs})
 
 
-@login_required
+@require_perm("imports", "download_template")
 def download_template(request, entity_type):
     if entity_type not in ImportJob.EntityType.values:
         messages.error(request, "Unknown template type.")
@@ -45,7 +46,7 @@ def download_template(request, entity_type):
     return response
 
 
-@login_required
+@require_perm("imports", "upload")
 def upload_import(request, entity_type):
     if entity_type not in ImportJob.EntityType.values:
         messages.error(request, "Unknown import type.")
@@ -85,7 +86,7 @@ def upload_import(request, entity_type):
     return redirect("imports_excel:job_detail", pk=job.pk)
 
 
-@login_required
+@require_perm("imports", "view")
 def job_detail(request, pk):
     job = get_object_or_404(ImportJob.objects.prefetch_related("row_errors"), pk=pk)
     return render(request, "imports_excel/job_detail.html", {"job": job})

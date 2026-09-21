@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Access Control{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+<link href="{% static 'css/access.css' %}" rel="stylesheet">
+{% endblock %}
+{% block breadcrumb %}<a href="{% url 'core:dashboard' %}">Dashboard</a> / Access Control{% endblock %}
+{% block content %}
+<div class="mq-master-page mq-access-page">
+  <div class="mq-master-topbar">
+    <div>
+      <h1 class="mq-master-title">Access Control</h1>
+      <p class="mq-access-sub">Roles, module permissions, and user assignment</p>
+    </div>
+  </div>
+
+  <div class="mq-access-stats">
+    <div class="mq-access-stat"><span class="mq-access-stat-label">Roles</span><span class="mq-access-stat-value">{{ stats.roles }}</span></div>
+    <div class="mq-access-stat"><span class="mq-access-stat-label">Users</span><span class="mq-access-stat-value">{{ stats.users }}</span></div>
+    <div class="mq-access-stat"><span class="mq-access-stat-label">Modules</span><span class="mq-access-stat-value">{{ stats.modules }}</span></div>
+    <div class="mq-access-stat"><span class="mq-access-stat-label">Grants</span><span class="mq-access-stat-value">{{ stats.grants }}</span></div>
+  </div>
+
+  <section class="mq-access-section">
+    <h2 class="mq-access-section-title">Role hierarchy</h2>
+    <div class="mq-access-roles">
+      {% for role in roles %}
+      <a class="mq-access-role-card{% if selected_role and selected_role.pk == role.pk %} is-selected{% endif %}"
+         href="{% url 'access:hub' %}?role={{ role.pk }}">
+        <div class="mq-access-role-name">{{ role.name }}</div>
+        <div class="mq-access-role-meta">Level {{ role.level }} · {{ role.user_count }} user{{ role.user_count|pluralize }}</div>
+        {% if role.description %}<div class="mq-access-role-desc">{{ role.description }}</div>{% endif %}
+      </a>
+      {% empty %}
+      <p class="text-muted">No roles yet. Run <code>python manage.py seed_access</code>.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if selected_role %}
+  <section class="mq-access-section mq-master-card">
+    <div class="mq-access-section-head">
+      <h2 class="mq-access-section-title mb-0">{{ selected_role.name }} permissions</h2>
+    </div>
+    <form method="post" action="{% url 'access:role_save_permissions' selected_role.pk %}">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="mq-master-table mq-access-matrix">
+          <thead>
+            <tr>
+              <th>Module</th>
+              {% for action_code, action_label in matrix_actions %}
+              <th class="text-center">{{ action_label }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in matrix_rows %}
+            <tr>
+              <td>{{ row.label }}</td>
+              {% for cell in row.cells %}
+              <td class="text-center">
+                <input type="checkbox"
+                       class="form-check-input mq-access-check"
+                       name="perm__{{ row.module }}__{{ cell.action }}"
+                       value="1"
+                       {% if cell.granted %}checked{% endif %}
+                       aria-label="{{ row.label }} {{ cell.action }}">
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="mq-access-form-actions">
+        <button class="btn mq-btn-theme" type="submit">Save permissions</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="mq-access-section mq-master-card">
+    <div class="mq-access-section-head">
+      <h2 class="mq-access-section-title mb-0">Role members</h2>
+    </div>
+    <ul class="mq-access-members">
+      {% for link in members %}
+      <li class="mq-access-member">
+        <div>
+          <div class="mq-access-member-name">{{ link.user.email|default:link.user.username }}</div>
+          <div class="mq-access-member-meta">{{ link.user.get_full_name }}</div>
+        </div>
+        <form method="post" action="{% url 'access:role_remove_user' selected_role.pk link.user.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Remove</button>
+        </form>
+      </li>
+      {% empty %}
+      <li class="text-muted px-3 py-2">No users assigned to this role.</li>
+      {% endfor %}
+    </ul>
+    <form method="post" action="{% url 'access:role_assign_user' selected_role.pk %}" class="mq-access-assign">
+      {% csrf_token %}
+      <select class="form-select" name="user_id" required>
+        <option value="">Assign user…</option>
+        {% for u in assignable_users %}
+        <option value="{{ u.pk }}">{{ u.email|default:u.username }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn mq-btn-theme" type="submit">Assign</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

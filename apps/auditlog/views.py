@@ -5,12 +5,12 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from apps.core.decorators import admin_required
+from apps.core.decorators import require_perm
 
 from .models import SystemLog
 
 
-@admin_required
+@require_perm("error_logs", "view")
 def log_list(request):
     qs = SystemLog.objects.select_related("user").all()
     level = request.GET.get("level", "").strip()
@@ -53,13 +53,13 @@ def log_list(request):
     )
 
 
-@admin_required
+@require_perm("error_logs", "view")
 def log_detail(request, pk):
     log = get_object_or_404(SystemLog.objects.select_related("user"), pk=pk)
     return render(request, "auditlog/log_detail.html", {"log": log})
 
 
-@admin_required
+@require_perm("error_logs", "purge")
 def log_purge(request):
     if request.method == "POST":
         try:

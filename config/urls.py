@@ -1,9 +1,9 @@
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import include, path, re_path
 from django.views.static import serve
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 def root(request):
@@ -25,6 +25,7 @@ urlpatterns = [
     path("imports/", include("apps.imports_excel.urls")),
     path("error-logs/", include("apps.auditlog.urls")),
     path("onboarding/", include("apps.onboarding.urls")),
+    path("access/", include("apps.access.feature_urls")),
 ]
 
 if settings.DEBUG:

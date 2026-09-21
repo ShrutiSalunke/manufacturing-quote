@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static mq_perms %}
 {% block title %}Sub Processes{% endblock %}
 {% block extra_css %}
 <link href="{% static 'css/master-table.css' %}" rel="stylesheet">
@@ -50,7 +50,8 @@
         </select>
       </div>
 
-      {% if user.is_app_admin %}
+      {% can "subprocesses" "create" as can_create %}
+      {% if can_create %}
       <a class="btn mq-btn-theme mq-master-add" href="{% url 'processes:subprocess_create' %}">Add Sub Process</a>
       {% endif %}
     </form>

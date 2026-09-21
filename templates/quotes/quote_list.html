@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static mq_perms %}
 {% block title %}Quotes{% endblock %}
 {% block extra_css %}
 <link href="{% static 'css/master-table.css' %}" rel="stylesheet">
@@ -58,7 +58,10 @@
         </select>
       </div>
 
+      {% can "quotes" "create" as can_create_quote %}
+      {% if can_create_quote %}
       <a class="btn mq-btn-theme mq-master-add" href="{% url 'quotes:quote_create' %}">New Quote</a>
+      {% endif %}
     </form>
   </div>
 

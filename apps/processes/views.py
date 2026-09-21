@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from apps.core.decorators import admin_required
+from apps.core.decorators import require_perm
 from apps.quotes.models import Quote
 
 from .forms import (
@@ -108,7 +108,7 @@ def _master_list(request, qs, *, search_fields, panel_partial, full_template, co
     return render(request, template, context)
 
 
-@login_required
+@require_perm("processes", "view")
 def process_list(request):
     qs = Process.objects.select_related("plant").order_by("code")
     return _master_list(
@@ -121,7 +121,7 @@ def process_list(request):
     )
 
 
-@admin_required
+@require_perm("processes", "create")
 def process_create(request):
     if request.method == "POST":
         form = ProcessForm(request.POST)
@@ -142,7 +142,7 @@ def process_create(request):
     )
 
 
-@login_required
+@require_perm("processes", "view")
 def process_detail(request, pk):
     obj = get_object_or_404(
         Process.objects.select_related("plant").prefetch_related("fields", "subprocesses"),
@@ -151,7 +151,7 @@ def process_detail(request, pk):
     return render(request, "processes/process_detail.html", {"process": obj})
 
 
-@admin_required
+@require_perm("processes", "edit")
 def process_edit(request, pk):
     obj = get_object_or_404(Process, pk=pk)
     if request.method == "POST":
@@ -172,7 +172,7 @@ def process_edit(request, pk):
     )
 
 
-@admin_required
+@require_perm("processes", "soft_delete")
 def process_soft_delete(request, pk):
     obj = get_object_or_404(Process, pk=pk)
     if request.method == "POST":
@@ -185,7 +185,7 @@ def process_soft_delete(request, pk):
     return redirect("processes:process_list")
 
 
-@admin_required
+@require_perm("processes", "soft_delete")
 def process_restore(request, pk):
     obj = get_object_or_404(Process, pk=pk)
     if request.method == "POST":
@@ -198,7 +198,7 @@ def process_restore(request, pk):
     return redirect("processes:process_list")
 
 
-@admin_required
+@require_perm("processes", "permanent_delete")
 def process_delete(request, pk):
     obj = get_object_or_404(Process, pk=pk)
     if request.method == "POST":
@@ -209,7 +209,7 @@ def process_delete(request, pk):
     return redirect("processes:process_detail", pk=pk)
 
 
-@admin_required
+@require_perm("processes", "edit")
 def process_field_add(request, pk):
     process = get_object_or_404(Process, pk=pk)
     if request.method == "POST":
@@ -233,7 +233,7 @@ def process_field_add(request, pk):
     )
 
 
-@admin_required
+@require_perm("processes", "edit")
 def process_field_edit(request, pk, field_pk):
     process = get_object_or_404(Process, pk=pk)
     field = get_object_or_404(ProcessField, pk=field_pk, process=process)
@@ -256,7 +256,7 @@ def process_field_edit(request, pk, field_pk):
     )
 
 
-@admin_required
+@require_perm("processes", "edit")
 def process_field_delete(request, pk, field_pk):
     process = get_object_or_404(Process, pk=pk)
     field = get_object_or_404(ProcessField, pk=field_pk, process=process)
@@ -267,7 +267,7 @@ def process_field_delete(request, pk, field_pk):
     return redirect("processes:process_detail", pk=pk)
 
 
-@admin_required
+@require_perm("processes", "edit")
 def process_link_subprocesses(request, pk):
     process = get_object_or_404(Process, pk=pk)
     if request.method == "POST":
@@ -298,7 +298,7 @@ def process_link_subprocesses(request, pk):
     )
 
 
-@login_required
+@require_perm("subprocesses", "view")
 def subprocess_list(request):
     qs = SubProcess.objects.select_related("plant").order_by("code")
     return _master_list(
@@ -311,7 +311,7 @@ def subprocess_list(request):
     )
 
 
-@admin_required
+@require_perm("subprocesses", "create")
 def subprocess_create(request):
     if request.method == "POST":
         form = SubProcessForm(request.POST)
@@ -332,7 +332,7 @@ def subprocess_create(request):
     )
 
 
-@login_required
+@require_perm("subprocesses", "view")
 def subprocess_detail(request, pk):
     obj = get_object_or_404(
         SubProcess.objects.select_related("plant").prefetch_related("fields", "processes"),
@@ -341,7 +341,7 @@ def subprocess_detail(request, pk):
     return render(request, "processes/subprocess_detail.html", {"subprocess": obj})
 
 
-@admin_required
+@require_perm("subprocesses", "edit")
 def subprocess_edit(request, pk):
     obj = get_object_or_404(SubProcess, pk=pk)
     if request.method == "POST":
@@ -362,7 +362,7 @@ def subprocess_edit(request, pk):
     )
 
 
-@admin_required
+@require_perm("subprocesses", "soft_delete")
 def subprocess_soft_delete(request, pk):
     obj = get_object_or_404(SubProcess, pk=pk)
     if request.method == "POST":
@@ -375,7 +375,7 @@ def subprocess_soft_delete(request, pk):
     return redirect("processes:subprocess_list")
 
 
-@admin_required
+@require_perm("subprocesses", "soft_delete")
 def subprocess_restore(request, pk):
     obj = get_object_or_404(SubProcess, pk=pk)
     if request.method == "POST":
@@ -388,7 +388,7 @@ def subprocess_restore(request, pk):
     return redirect("processes:subprocess_list")
 
 
-@admin_required
+@require_perm("subprocesses", "permanent_delete")
 def subprocess_delete(request, pk):
     obj = get_object_or_404(SubProcess, pk=pk)
     if request.method == "POST":
@@ -399,7 +399,7 @@ def subprocess_delete(request, pk):
     return redirect("processes:subprocess_detail", pk=pk)
 
 
-@admin_required
+@require_perm("subprocesses", "edit")
 def subprocess_field_add(request, pk):
     subprocess = get_object_or_404(SubProcess, pk=pk)
     if request.method == "POST":
@@ -423,7 +423,7 @@ def subprocess_field_add(request, pk):
     )
 
 
-@admin_required
+@require_perm("subprocesses", "edit")
 def subprocess_field_edit(request, pk, field_pk):
     subprocess = get_object_or_404(SubProcess, pk=pk)
     field = get_object_or_404(SubProcessField, pk=field_pk, subprocess=subprocess)
@@ -446,7 +446,7 @@ def subprocess_field_edit(request, pk, field_pk):
     )
 
 
-@admin_required
+@require_perm("subprocesses", "edit")
 def subprocess_field_delete(request, pk, field_pk):
     subprocess = get_object_or_404(SubProcess, pk=pk)
     field = get_object_or_404(SubProcessField, pk=field_pk, subprocess=subprocess)
@@ -457,7 +457,7 @@ def subprocess_field_delete(request, pk, field_pk):
     return redirect("processes:subprocess_detail", pk=pk)
 
 
-@login_required
+@require_perm("quotes", "edit")
 def quote_add_process(request, quote_pk):
     quote = get_object_or_404(Quote, pk=quote_pk)
     if not quote.is_editable:
@@ -515,7 +515,7 @@ def quote_add_process(request, quote_pk):
     )
 
 
-@login_required
+@require_perm("quotes", "edit")
 def quote_process_fields(request, quote_pk, qp_pk):
     quote = get_object_or_404(Quote, pk=quote_pk)
     qp = get_object_or_404(
@@ -565,7 +565,7 @@ def quote_process_fields(request, quote_pk, qp_pk):
     )
 
 
-@login_required
+@require_perm("quotes", "edit")
 def quote_process_remove(request, quote_pk, qp_pk):
     quote = get_object_or_404(Quote, pk=quote_pk)
     qp = get_object_or_404(QuoteProcess, pk=qp_pk, quote=quote)
@@ -581,7 +581,7 @@ def quote_process_remove(request, quote_pk, qp_pk):
     return _redirect_quote_home(request, quote_pk)
 
 
-@login_required
+@require_perm("quotes", "edit")
 def quote_add_subprocess(request, quote_pk, qp_pk):
     quote = get_object_or_404(Quote, pk=quote_pk)
     qp = get_object_or_404(QuoteProcess.objects.select_related("process"), pk=qp_pk, quote=quote)
@@ -616,7 +616,7 @@ def quote_add_subprocess(request, quote_pk, qp_pk):
     )
 
 
-@login_required
+@require_perm("quotes", "edit")
 def quote_subprocess_fields(request, quote_pk, qp_pk, qs_pk):
     quote = get_object_or_404(Quote, pk=quote_pk)
     qp = get_object_or_404(QuoteProcess, pk=qp_pk, quote=quote)
@@ -667,7 +667,7 @@ def quote_subprocess_fields(request, quote_pk, qp_pk, qs_pk):
     )
 
 
-@login_required
+@require_perm("quotes", "edit")
 def quote_subprocess_remove(request, quote_pk, qp_pk, qs_pk):
     quote = get_object_or_404(Quote, pk=quote_pk)
     qp = get_object_or_404(QuoteProcess, pk=qp_pk, quote=quote)

@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "apps.imports_excel",
     "apps.onboarding",
     "apps.auditlog",
+    "apps.access",
 ]
 
 MIDDLEWARE = [
@@ -151,6 +152,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 EXCEL_TEMPLATES_DIR = BASE_DIR / "excel_templates"
 COMPANY_NAME = os.getenv("COMPANY_NAME", "Prasad Manufacturing")
+
+# Optional RBAC / FBAC (apps.access). Off = legacy ADMIN/QUOTER only.
+# Enable on Demo / client deploys that include this feature branch.
+FEATURE_RBAC = os.getenv("FEATURE_RBAC", "True").lower() in ("1", "true", "yes")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

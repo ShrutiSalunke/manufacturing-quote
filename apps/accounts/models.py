@@ -11,7 +11,16 @@ class User(AbstractUser):
 
     @property
     def is_app_admin(self):
-        return self.role == self.Role.ADMIN or self.is_superuser
+        if self.is_superuser or self.role == self.Role.ADMIN:
+            return True
+        try:
+            from apps.core.permissions import feature_rbac_enabled, user_can
+
+            if not feature_rbac_enabled():
+                return False
+            return user_can(self, "access_control", "view")
+        except Exception:
+            return False
 
     def __str__(self):
         return self.email or self.username
