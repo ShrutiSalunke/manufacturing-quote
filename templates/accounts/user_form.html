@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <h1 class="mq-master-title">{{ page_title }}</h1>
+    <a class="btn btn-outline-secondary" href="{% url 'accounts:user_list' %}">Back to Users</a>
+  </div>
+
+  <form method="post" id="user-master-form" class="mq-form-card mq-master-card" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="mq-form-banner mq-form-banner-error">
+      {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Account</h2>
+      <p class="text-muted small mb-3">
+        {% if is_create %}
+          New users get full access to the app.
+          {% if feature_rbac %}After saving you can assign Access Control roles.{% endif %}
+        {% else %}
+          Leave password blank to keep the current password.
+        {% endif %}
+      </p>
+      <div class="mq-form-grid">
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+          {{ form.username }}
+          {% if form.username.help_text %}<div class="mq-help">{{ form.username.help_text }}</div>{% endif %}
+          {% for e in form.username.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+          {{ form.email }}
+          {% for e in form.email.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+          {{ form.first_name }}
+          {% for e in form.first_name.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+          {{ form.last_name }}
+          {% for e in form.last_name.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mq-form-section">
+      <h2 class="mq-form-section-title">Password{% if not is_create %} <span class="text-muted fw-normal">(optional)</span>{% endif %}</h2>
+      <div class="mq-form-grid">
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+          {{ form.password1 }}
+          {% if form.password1.help_text %}<div class="mq-help">{{ form.password1.help_text }}</div>{% endif %}
+          {% for e in form.password1.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mq-field">
+          <label class="mq-label" for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+          {{ form.password2 }}
+          {% for e in form.password2.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        {% if not is_create %}
+        <div class="mq-field mq-field-span-2">
+          <div class="form-check mt-2">
+            {{ form.is_active }}
+            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+          </div>
+          {% if form.is_active.help_text %}<div class="mq-help">{{ form.is_active.help_text }}</div>{% endif %}
+          {% for e in form.is_active.errors %}<div class="mq-field-error">{{ e }}</div>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mq-form-actions">
+      <button type="submit" class="btn mq-btn-theme">{% if is_create %}Create user{% else %}Save changes{% endif %}</button>
+      <a class="btn btn-outline-secondary" href="{% url 'accounts:user_list' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  (function () {
+    if (!window.MQ || !MQ.alert) return;
+    var form = document.getElementById("user-master-form");
+    if (!form) return;
+    var firstError = form.querySelector(".mq-field-error, .mq-form-banner-error");
+    if (firstError) {
+      MQ.alert({
+        title: "Please fix the form",
+        message: firstError.textContent.trim() || "Some fields need your attention before saving.",
+        variant: "warning",
+      });
+    }
+  })();
+</script>
+{% endblock %}

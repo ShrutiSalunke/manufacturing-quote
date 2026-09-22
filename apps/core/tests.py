@@ -152,10 +152,14 @@ class ManufacturingQuoteMVPTests(TestCase):
             raise RuntimeError("forced boom")
         except RuntimeError as exc:
             result = mw.process_exception(request, exc)
-        # Tests run with DEBUG=False → friendly 500 with correlation id
-        self.assertIsNotNone(result)
-        self.assertEqual(result.status_code, 500)
-        self.assertIn(str(request.correlation_id), result.content.decode())
+        # DEBUG / TESTING: middleware logs then returns None (Django default 500).
+        # Production (DEBUG=False, TESTING=False): returns a friendly 500 page.
+        if settings.DEBUG or getattr(settings, "TESTING", False):
+            self.assertIsNone(result)
+        else:
+            self.assertIsNotNone(result)
+            self.assertEqual(result.status_code, 500)
+            self.assertIn(str(request.correlation_id), result.content.decode())
         after = SystemLog.objects.filter(event_type="EXCEPTION").count()
         self.assertGreater(after, before)
         latest = SystemLog.objects.filter(event_type="EXCEPTION").order_by("-created_at").first()
@@ -178,12 +182,18 @@ class ManufacturingQuoteMVPTests(TestCase):
         self.assertFalse(state.completed)
         self.assertFalse(state.dismissed)
 
-    def test_quoter_forbidden_from_admin_pages(self):
+    def test_quoter_has_full_access_when_rbac_off(self):
+        """Main / small-client model: every active user has full access (no Quoter gate)."""
         self.client.login(username="quoter@example.com", password="Quoter123!")
-        self.assertEqual(self.client.get(reverse("catalog:custom_field_list")).status_code, 403)
-        self.assertEqual(self.client.get(reverse("auditlog:log_list")).status_code, 403)
+        self.assertTrue(self.quoter.is_app_admin)
+        self.assertEqual(self.client.get(reverse("catalog:custom_field_list")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("auditlog:log_list")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("accounts:user_list")).status_code, 200)
         tmpl = ProductTemplate.objects.get(code="SHEET-BOX", version=1)
-        self.assertEqual(self.client.get(reverse("templates_engine:template_edit", args=[tmpl.pk])).status_code, 403)
+        # Published templates redirect to detail; important part is not 403.
+        resp = self.client.get(reverse("templates_engine:template_edit", args=[tmpl.pk]))
+        self.assertIn(resp.status_code, (200, 302))
+        self.assertNotEqual(resp.status_code, 403)
 
     def test_download_template_authenticated(self):
         self.client.login(username="admin@example.com", password="Admin123!")

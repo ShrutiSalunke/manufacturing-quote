@@ -33,7 +33,7 @@
     <ul class="dropdown-menu dropdown-menu-end mq-user-menu">
       <li class="mq-user-menu-head">
         <div class="mq-user-menu-name">{{ user.get_full_name|default:user.email|default:user.username }}</div>
-        <div class="mq-user-menu-role">{{ user.role }}</div>
+        {% if FEATURE_RBAC %}<div class="mq-user-menu-role">{{ user.role }}</div>{% endif %}
       </li>
       <li><hr class="mq-user-menu-divider"></li>
       <li>
@@ -141,14 +141,20 @@
       </li>
 
       {% if user.is_app_admin %}
-      <li class="sidebar-group {% if ns == 'auditlog' %}is-open{% endif %}" data-group="admin">
-        <button type="button" class="sidebar-section-toggle" aria-expanded="{% if ns == 'auditlog' %}true{% else %}false{% endif %}">
+      <li class="sidebar-group {% if ns == 'auditlog' or ns == 'accounts' and 'user' in name %}is-open{% endif %}" data-group="admin">
+        <button type="button" class="sidebar-section-toggle" aria-expanded="{% if ns == 'auditlog' or ns == 'accounts' and 'user' in name %}true{% else %}false{% endif %}">
           <span class="sidebar-section-label">Admin</span>
           <span class="sidebar-chevron" aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </span>
         </button>
         <ul class="sidebar-subnav">
+          <li>
+            <a class="sidebar-link {% if ns == 'accounts' and 'user' in name %}is-active{% endif %}" href="{% url 'accounts:user_list' %}" data-tour="nav-users" title="Users">
+              <span class="sidebar-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+              <span class="sidebar-label">Users</span>
+            </a>
+          </li>
           <li>
             <a class="sidebar-link {% if ns == 'auditlog' %}is-active{% endif %}" href="{% url 'auditlog:log_list' %}" data-tour="nav-error-logs" title="Error Logs">
               <span class="sidebar-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>

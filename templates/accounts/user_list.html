@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Users{% endblock %}
+{% block extra_css %}
+<link href="{% static 'css/master-table.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="mq-master-page">
+  <div class="mq-master-topbar">
+    <h1 class="mq-master-title">Users</h1>
+
+    <form id="user-filter-form" class="mq-master-controls" method="get">
+      <input type="hidden" name="page" value="1">
+
+      <div class="mq-master-search">
+        <span class="mq-search-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M20 20l-3.5-3.5"></path>
+          </svg>
+        </span>
+        <input type="search" name="q" value="{{ q }}" placeholder="Search users" autocomplete="off" aria-label="Search users">
+      </div>
+
+      <div class="mq-master-filter">
+        <span class="mq-filter-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="7" y1="12" x2="17" y2="12"></line>
+            <line x1="10" y1="17" x2="14" y2="17"></line>
+            <circle cx="9" cy="7" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
+            <circle cx="12" cy="17" r="1.5" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </span>
+        <select class="form-select" name="active" aria-label="Status filter" onchange="this.form.submit()">
+          <option value="" {% if active == "" %}selected{% endif %}>All statuses</option>
+          <option value="1" {% if active == "1" %}selected{% endif %}>Active only</option>
+          <option value="0" {% if active == "0" %}selected{% endif %}>Inactive only</option>
+        </select>
+      </div>
+
+      <select class="form-select" name="per_page" aria-label="Rows per page" onchange="this.form.submit()" style="max-width:5.5rem">
+        {% for n in per_page_choices %}
+        <option value="{{ n }}" {% if per_page == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+
+      <a class="btn mq-btn-theme mq-master-add" href="{% url 'accounts:user_create' %}">Add User</a>
+    </form>
+  </div>
+
+  <div class="mq-master-panel">
+    <div class="mq-master-card">
+      {% if users %}
+      <div class="table-responsive">
+        <table class="mq-master-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Username</th>
+              <th>Status</th>
+              <th class="mq-actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for u in users %}
+            <tr>
+              <td data-label="Name">{% if u.first_name or u.last_name %}{{ u.first_name }} {{ u.last_name }}{% else %}—{% endif %}</td>
+              <td data-label="Email">{{ u.email|default:"—" }}</td>
+              <td data-label="Username">{{ u.username }}</td>
+              <td data-label="Status">
+                {% if u.is_active %}
+                  <span class="mq-status-pill is-active">Active</span>
+                {% else %}
+                  <span class="mq-status-pill is-inactive">Inactive</span>
+                {% endif %}
+              </td>
+              <td data-label="Actions" class="mq-actions-col">
+                <div class="mq-master-actions">
+                  <a class="mq-icon-btn mq-icon-btn-edit" href="{% url 'accounts:user_edit' u.pk %}" title="Edit" aria-label="Edit {{ u.username }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                  </a>
+                  {% if u.is_active %}
+                    {% if u.pk != request.user.pk %}
+                    <form method="post" action="{% url 'accounts:user_deactivate' u.pk %}">{% csrf_token %}
+                      <button
+                        class="mq-icon-btn mq-icon-btn-deactivate"
+                        type="submit"
+                        title="Deactivate"
+                        aria-label="Deactivate {{ u.username }}"
+                        data-mq-confirm-submit
+                        data-mq-title="Deactivate user?"
+                        data-mq-message="{{ u.email|default:u.username }} will not be able to sign in."
+                        data-mq-confirm-label="Deactivate"
+                        data-mq-variant="warning"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <circle cx="12" cy="12" r="9"></circle>
+                          <path d="M9 12h6"></path>
+                        </svg>
+                      </button>
+                    </form>
+                    {% endif %}
+                  {% else %}
+                  <form method="post" action="{% url 'accounts:user_activate' u.pk %}">{% csrf_token %}
+                    <button class="mq-icon-btn mq-icon-btn-activate" type="submit" title="Activate" aria-label="Activate {{ u.username }}">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.5 15a9 9 0 1 0 2.1-8.7L1 10"></path>
+                      </svg>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mq-master-footer">
+        <div class="mq-footer-left">
+          <span class="mq-range">
+            {% if page_obj.paginator.count %}
+              Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+            {% else %}
+              Showing 0 of 0
+            {% endif %}
+          </span>
+        </div>
+        <div class="mq-footer-right mq-pager">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}" aria-label="Previous">‹</a>
+          {% else %}
+            <span class="mq-page is-disabled">‹</span>
+          {% endif %}
+          {% for num in page_numbers %}
+            {% if num is None %}
+              <span class="mq-ellipsis">…</span>
+            {% elif num == page_obj.number %}
+              <span class="mq-page is-current">{{ num }}</span>
+            {% else %}
+              <a href="?page={{ num }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}">{{ num }}</a>
+            {% endif %}
+          {% endfor %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&amp;q={{ q|urlencode }}&amp;active={{ active }}&amp;per_page={{ per_page }}" aria-label="Next">›</a>
+          {% else %}
+            <span class="mq-page is-disabled">›</span>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state m-3">
+        <p class="mb-2">No users found.</p>
+        <a class="btn btn-primary" href="{% url 'accounts:user_create' %}">Add first user</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
