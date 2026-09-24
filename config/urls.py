@@ -27,6 +27,10 @@ urlpatterns = [
     path("onboarding/", include("apps.onboarding.urls")),
 ]
 
+if getattr(settings, "DRAWING_QUOTE_ENABLED", False):
+    urlpatterns.append(path("drawing-quote/", include("apps.drawing_quote.urls")))
+
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 else:

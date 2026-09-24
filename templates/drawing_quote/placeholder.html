@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="mq-page-header mb-4">
+    <h1 class="h3 mb-1">{{ page_title }}</h1>
+    <p class="text-muted mb-0">Drawing → Quote module is enabled (Phase P0 scaffold).</p>
+  </div>
+  <div class="alert alert-info mb-0" role="status">
+    <strong>Coming next (Phase P1):</strong> configurable part families, parameters, and process routing.
+    Happy path target: <em>Upload PDF → auto-fill quote → Review / Approve</em>.
+  </div>
+</div>
+{% endblock %}

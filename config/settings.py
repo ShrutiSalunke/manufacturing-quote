@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "apps.imports_excel",
     "apps.onboarding",
     "apps.auditlog",
+    "apps.drawing_quote",  # feature/drawing-quote; UI/URLs gated by DRAWING_QUOTE_ENABLED
 ]
 
 MIDDLEWARE = [
@@ -155,6 +156,18 @@ COMPANY_NAME = os.getenv("COMPANY_NAME", "Prasad Manufacturing")
 # Optional RBAC / FBAC (apps.access). Off on Main — every active user has full access.
 # Enable only on Demo / client deploys that include the feature/rbac pack.
 FEATURE_RBAC = os.getenv("FEATURE_RBAC", "False").lower() in ("1", "true", "yes")
+
+# Drawing → Quote (feature/drawing-quote). Leave False on Main until rollout.
+DRAWING_QUOTE_ENABLED = os.getenv("DRAWING_QUOTE_ENABLED", "False").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+# Vision/LLM extractor provider for later phases (P3+). "none" = text/DXF only.
+DRAWING_QUOTE_VISION_PROVIDER = os.getenv("DRAWING_QUOTE_VISION_PROVIDER", "none").strip().lower()
+DRAWING_QUOTE_VISION_API_KEY = os.getenv("DRAWING_QUOTE_VISION_API_KEY", "").strip()
+DRAWING_QUOTE_VISION_MODEL = os.getenv("DRAWING_QUOTE_VISION_MODEL", "").strip()
+
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
